@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clean-and-process"
+version = "0.1.0"
+description = "Source-independent, evidence-backed product content processing"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.7,<3"]
+
+[project.optional-dependencies]
+embeddings = ["sentence-transformers>=6.2,<7"]
+
+[project.scripts]
+clean-process = "clean_process.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["clean_process*"]
+
+[tool.setuptools.package-data]
+clean_process = ["schemas/*.json", "examples/*.json", "README.md", "vocabularies/*.json"]

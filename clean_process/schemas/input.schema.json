@@ -1,0 +1,304 @@
+{
+  "$defs": {
+    "Datum": {
+      "additionalProperties": false,
+      "properties": {
+        "property": {
+          "minLength": 1,
+          "title": "Property",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "method": {
+          "default": "source_declaration",
+          "enum": [
+            "observation",
+            "source_declaration",
+            "interpretation"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "locator": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Locator",
+          "type": "object"
+        }
+      },
+      "required": [
+        "property",
+        "value"
+      ],
+      "title": "Datum",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Relation": {
+      "additionalProperties": false,
+      "properties": {
+        "subject_unit": {
+          "title": "Subject Unit",
+          "type": "string"
+        },
+        "predicate": {
+          "enum": [
+            "contains",
+            "member",
+            "represents",
+            "belongs_to",
+            "has_variant",
+            "offers",
+            "presents",
+            "uses",
+            "mentions",
+            "evaluates",
+            "summarizes"
+          ],
+          "title": "Predicate",
+          "type": "string"
+        },
+        "object_unit": {
+          "title": "Object Unit",
+          "type": "string"
+        },
+        "method": {
+          "default": "source_declaration",
+          "enum": [
+            "observation",
+            "source_declaration",
+            "interpretation"
+          ],
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject_unit",
+        "predicate",
+        "object_unit"
+      ],
+      "title": "Relation",
+      "type": "object"
+    },
+    "Sample": {
+      "additionalProperties": false,
+      "properties": {
+        "sample_id": {
+          "minLength": 1,
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "source_ref": {
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed At"
+        },
+        "content_units": {
+          "items": {
+            "$ref": "#/$defs/Unit"
+          },
+          "minItems": 1,
+          "title": "Content Units",
+          "type": "array"
+        },
+        "relations": {
+          "items": {
+            "$ref": "#/$defs/Relation"
+          },
+          "title": "Relations",
+          "type": "array"
+        },
+        "context": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Context",
+          "type": "object"
+        },
+        "coverage": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Coverage",
+          "type": "object"
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_ref",
+        "content_units"
+      ],
+      "title": "Sample",
+      "type": "object"
+    },
+    "Unit": {
+      "additionalProperties": false,
+      "properties": {
+        "unit_id": {
+          "minLength": 1,
+          "title": "Unit Id",
+          "type": "string"
+        },
+        "modality": {
+          "default": "text",
+          "enum": [
+            "text",
+            "image",
+            "structured"
+          ],
+          "title": "Modality",
+          "type": "string"
+        },
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        },
+        "resource_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Ref"
+        },
+        "classification": {
+          "default": "other",
+          "enum": [
+            "Pagina",
+            "Coleccion",
+            "Aparicion",
+            "Producto",
+            "Categoria",
+            "Variante",
+            "Oferta",
+            "Imagen",
+            "UsoDeImagen",
+            "Texto",
+            "Resena",
+            "ValoracionAgregada",
+            "Evidencia",
+            "Afirmacion",
+            "other"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "classification_method": {
+          "default": "source_declaration",
+          "enum": [
+            "observation",
+            "source_declaration",
+            "interpretation"
+          ],
+          "title": "Classification Method",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/Datum"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "locator": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Locator",
+          "type": "object"
+        },
+        "voice": {
+          "default": "unknown",
+          "enum": [
+            "brand",
+            "seller",
+            "consumer",
+            "unknown"
+          ],
+          "title": "Voice",
+          "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        }
+      },
+      "required": [
+        "unit_id"
+      ],
+      "title": "Unit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "samples": {
+      "items": {
+        "$ref": "#/$defs/Sample"
+      },
+      "minItems": 1,
+      "title": "Samples",
+      "type": "array"
+    },
+    "questions": {
+      "items": {
+        "enum": [
+          "price_range",
+          "visual_presentation",
+          "keywords",
+          "category_opinions"
+        ],
+        "type": "string"
+      },
+      "title": "Questions",
+      "type": "array"
+    },
+    "scope": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Scope",
+      "type": "object"
+    }
+  },
+  "required": [
+    "samples"
+  ],
+  "title": "Input",
+  "type": "object"
+}

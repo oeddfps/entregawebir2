@@ -1,0 +1,1415 @@
+{
+  "$defs": {
+    "AggregateView": {
+      "additionalProperties": false,
+      "properties": {
+        "aggregate_ref": {
+          "title": "Aggregate Ref",
+          "type": "string"
+        },
+        "subject_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Subject Refs",
+          "type": "array"
+        },
+        "rating": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "scale": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "published_count": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "count_kind": {
+          "enum": [
+            "ratings",
+            "reviews",
+            "unspecified"
+          ],
+          "title": "Count Kind",
+          "type": "string"
+        },
+        "assertion_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assertion Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "aggregate_ref",
+        "subject_refs",
+        "rating",
+        "scale",
+        "published_count",
+        "count_kind",
+        "assertion_refs"
+      ],
+      "title": "AggregateView",
+      "type": "object"
+    },
+    "AppearanceView": {
+      "additionalProperties": false,
+      "properties": {
+        "appearance_ref": {
+          "title": "Appearance Ref",
+          "type": "string"
+        },
+        "subject_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Subject Refs",
+          "type": "array"
+        },
+        "image_uses": {
+          "items": {
+            "$ref": "#/$defs/ImageUseView"
+          },
+          "title": "Image Uses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "appearance_ref",
+        "subject_refs",
+        "image_uses"
+      ],
+      "title": "AppearanceView",
+      "type": "object"
+    },
+    "Assertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "subject_ref": {
+          "title": "Subject Ref",
+          "type": "string"
+        },
+        "predicate": {
+          "title": "Predicate",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue",
+          "default": null
+        },
+        "object_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Object Ref"
+        },
+        "method": {
+          "enum": [
+            "observation",
+            "source_declaration",
+            "interpretation"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "status": {
+          "default": "accepted",
+          "enum": [
+            "proposed",
+            "accepted",
+            "ambiguous",
+            "conflict"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "scope": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Scope",
+          "type": "object"
+        },
+        "justification": {
+          "title": "Justification",
+          "type": "string"
+        },
+        "decision_history": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Decision History",
+          "type": "array"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "subject_ref",
+        "predicate",
+        "method",
+        "evidence_refs",
+        "justification"
+      ],
+      "title": "Assertion",
+      "type": "object"
+    },
+    "CategoryView": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "identity_status": {
+          "enum": [
+            "provisional",
+            "resolved",
+            "disputed"
+          ],
+          "title": "Identity Status",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Name"
+        },
+        "field_assertion_refs": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Field Assertion Refs",
+          "type": "object"
+        }
+      },
+      "required": [
+        "entity_id",
+        "identity_status",
+        "name",
+        "field_assertion_refs"
+      ],
+      "title": "CategoryView",
+      "type": "object"
+    },
+    "Datum": {
+      "additionalProperties": false,
+      "properties": {
+        "property": {
+          "minLength": 1,
+          "title": "Property",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "method": {
+          "default": "source_declaration",
+          "enum": [
+            "observation",
+            "source_declaration",
+            "interpretation"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "locator": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Locator",
+          "type": "object"
+        }
+      },
+      "required": [
+        "property",
+        "value"
+      ],
+      "title": "Datum",
+      "type": "object"
+    },
+    "Entity": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "Pagina",
+            "Coleccion",
+            "Aparicion",
+            "Producto",
+            "Categoria",
+            "Variante",
+            "Oferta",
+            "Imagen",
+            "UsoDeImagen",
+            "Texto",
+            "Resena",
+            "ValoracionAgregada",
+            "Evidencia",
+            "Afirmacion",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "identity_status": {
+          "default": "provisional",
+          "enum": [
+            "provisional",
+            "resolved",
+            "disputed"
+          ],
+          "title": "Identity Status",
+          "type": "string"
+        },
+        "origin_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Origin Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entity_id",
+        "kind",
+        "origin_refs"
+      ],
+      "title": "Entity",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "sample_id": {
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "unit_id": {
+          "title": "Unit Id",
+          "type": "string"
+        },
+        "source_ref": {
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "resource_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Ref"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/Datum"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "locator": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Locator",
+          "type": "object"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "sample_id",
+        "unit_id",
+        "source_ref",
+        "text"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "finding_id": {
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "subject_ref": {
+          "title": "Subject Ref",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "extent": {
+          "enum": [
+            "individual",
+            "pattern",
+            "discrepancy"
+          ],
+          "title": "Extent",
+          "type": "string"
+        },
+        "unique_opinions": {
+          "minimum": 0,
+          "title": "Unique Opinions",
+          "type": "integer"
+        },
+        "assertion_refs": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Assertion Refs",
+          "type": "array"
+        },
+        "independence": {
+          "default": "unknown",
+          "enum": [
+            "known",
+            "unknown"
+          ],
+          "title": "Independence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_id",
+        "subject_ref",
+        "reason",
+        "extent",
+        "unique_opinions",
+        "assertion_refs"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "ImageUseView": {
+      "additionalProperties": false,
+      "properties": {
+        "usage_ref": {
+          "title": "Usage Ref",
+          "type": "string"
+        },
+        "image_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Image Refs",
+          "type": "array"
+        },
+        "resources": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Resources",
+          "type": "array"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Order"
+        },
+        "context": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "visibility": {
+          "anyOf": [
+            {
+              "enum": [
+                "visible",
+                "hidden",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Visibility"
+        },
+        "functions": {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Functions",
+          "type": "array"
+        },
+        "function_status": {
+          "enum": [
+            "declared",
+            "not_interpreted"
+          ],
+          "title": "Function Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "usage_ref",
+        "image_refs",
+        "resources",
+        "order",
+        "context",
+        "visibility",
+        "functions",
+        "function_status"
+      ],
+      "title": "ImageUseView",
+      "type": "object"
+    },
+    "Issue": {
+      "additionalProperties": false,
+      "properties": {
+        "issue_id": {
+          "title": "Issue Id",
+          "type": "string"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "subject_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Ref"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "details": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Details",
+          "type": "object"
+        }
+      },
+      "required": [
+        "issue_id",
+        "code",
+        "message"
+      ],
+      "title": "Issue",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "KeywordGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "subject_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Ref"
+        },
+        "corpus_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Corpus Id"
+        },
+        "kind": {
+          "enum": [
+            "keyword",
+            "topic"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "voice": {
+          "enum": [
+            "brand",
+            "seller",
+            "consumer",
+            "unknown"
+          ],
+          "title": "Voice",
+          "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Language"
+        },
+        "expressions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Expressions",
+          "type": "array"
+        },
+        "assertion_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assertion Refs",
+          "type": "array"
+        },
+        "unique_content_units": {
+          "minimum": 0,
+          "title": "Unique Content Units",
+          "type": "integer"
+        },
+        "expression_occurrences": {
+          "minimum": 0,
+          "title": "Expression Occurrences",
+          "type": "integer"
+        },
+        "independent_authors": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Independent Authors"
+        }
+      },
+      "required": [
+        "kind",
+        "label",
+        "voice",
+        "language",
+        "expressions",
+        "assertion_refs",
+        "unique_content_units",
+        "expression_occurrences",
+        "independent_authors"
+      ],
+      "title": "KeywordGroup",
+      "type": "object"
+    },
+    "KeywordValues": {
+      "additionalProperties": false,
+      "properties": {
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/KeywordGroup"
+          },
+          "title": "Groups",
+          "type": "array"
+        },
+        "definition": {
+          "default": "legacy_expressions",
+          "enum": [
+            "legacy_expressions",
+            "description_words_v1"
+          ],
+          "title": "Definition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "groups"
+      ],
+      "title": "KeywordValues",
+      "type": "object"
+    },
+    "Knowledge": {
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/Entity"
+          },
+          "title": "Entities",
+          "type": "array"
+        },
+        "assertions": {
+          "items": {
+            "$ref": "#/$defs/Assertion"
+          },
+          "title": "Assertions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entities",
+        "assertions"
+      ],
+      "title": "Knowledge",
+      "type": "object"
+    },
+    "OfferView": {
+      "additionalProperties": false,
+      "properties": {
+        "offer_ref": {
+          "title": "Offer Ref",
+          "type": "string"
+        },
+        "amount": {
+          "title": "Amount",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "exact",
+            "from",
+            "until",
+            "previous",
+            "installment"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "seller": {
+          "title": "Seller",
+          "type": "string"
+        },
+        "valid_period": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "assertion_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assertion Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "offer_ref",
+        "amount",
+        "kind",
+        "seller",
+        "valid_period",
+        "assertion_refs"
+      ],
+      "title": "OfferView",
+      "type": "object"
+    },
+    "OpinionGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "category_ref": {
+          "title": "Category Ref",
+          "type": "string"
+        },
+        "basis": {
+          "enum": [
+            "explicit_category_opinion",
+            "product_reviews_in_category"
+          ],
+          "title": "Basis",
+          "type": "string"
+        },
+        "aspect": {
+          "title": "Aspect",
+          "type": "string"
+        },
+        "sentiment": {
+          "enum": [
+            "favorable",
+            "unfavorable",
+            "mixed",
+            "neutral",
+            "indeterminate"
+          ],
+          "title": "Sentiment",
+          "type": "string"
+        },
+        "voice": {
+          "enum": [
+            "brand",
+            "seller",
+            "consumer",
+            "unknown"
+          ],
+          "title": "Voice",
+          "type": "string"
+        },
+        "review_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Review Refs",
+          "type": "array"
+        },
+        "assertion_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assertion Refs",
+          "type": "array"
+        },
+        "quotes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Quotes",
+          "type": "array"
+        },
+        "unique_opinions": {
+          "minimum": 0,
+          "title": "Unique Opinions",
+          "type": "integer"
+        },
+        "independence": {
+          "const": "unknown",
+          "title": "Independence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category_ref",
+        "basis",
+        "aspect",
+        "sentiment",
+        "voice",
+        "review_refs",
+        "assertion_refs",
+        "quotes",
+        "unique_opinions",
+        "independence"
+      ],
+      "title": "OpinionGroup",
+      "type": "object"
+    },
+    "OpinionValues": {
+      "additionalProperties": false,
+      "properties": {
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/OpinionGroup"
+          },
+          "title": "Groups",
+          "type": "array"
+        },
+        "published_aggregates": {
+          "items": {
+            "$ref": "#/$defs/AggregateView"
+          },
+          "title": "Published Aggregates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "groups",
+        "published_aggregates"
+      ],
+      "title": "OpinionValues",
+      "type": "object"
+    },
+    "PriceGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "variant_ref": {
+          "title": "Variant Ref",
+          "type": "string"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "conditions": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "comparison_time": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Comparison Time",
+          "type": "array"
+        },
+        "offers": {
+          "items": {
+            "$ref": "#/$defs/OfferView"
+          },
+          "title": "Offers",
+          "type": "array"
+        },
+        "price_observed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Price Observed"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Minimum"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum"
+        },
+        "range_basis": {
+          "enum": [
+            "exact_comparable_offers",
+            "no_observed_range"
+          ],
+          "title": "Range Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "variant_ref",
+        "currency",
+        "conditions",
+        "comparison_time",
+        "offers",
+        "price_observed",
+        "minimum",
+        "maximum",
+        "range_basis"
+      ],
+      "title": "PriceGroup",
+      "type": "object"
+    },
+    "PriceValues": {
+      "additionalProperties": false,
+      "properties": {
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/PriceGroup"
+          },
+          "title": "Groups",
+          "type": "array"
+        }
+      },
+      "required": [
+        "groups"
+      ],
+      "title": "PriceValues",
+      "type": "object"
+    },
+    "ProductView": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "identity_status": {
+          "enum": [
+            "provisional",
+            "resolved",
+            "disputed"
+          ],
+          "title": "Identity Status",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Name"
+        },
+        "brand": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Brand"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Description"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Url"
+        },
+        "sku": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sku"
+        },
+        "gtin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Gtin"
+        },
+        "field_assertion_refs": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Field Assertion Refs",
+          "type": "object"
+        },
+        "category_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Category Refs",
+          "type": "array"
+        },
+        "variant_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Variant Refs",
+          "type": "array"
+        },
+        "appearance_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Appearance Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entity_id",
+        "identity_status",
+        "name",
+        "brand",
+        "description",
+        "url",
+        "sku",
+        "gtin",
+        "field_assertion_refs",
+        "category_refs",
+        "variant_refs",
+        "appearance_refs"
+      ],
+      "title": "ProductView",
+      "type": "object"
+    },
+    "QuestionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "question_id": {
+          "enum": [
+            "price_range",
+            "visual_presentation",
+            "keywords",
+            "category_opinions"
+          ],
+          "title": "Question Id",
+          "type": "string"
+        },
+        "subject_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Ref"
+        },
+        "status": {
+          "enum": [
+            "answered",
+            "partial",
+            "not_answerable"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PriceValues"
+            },
+            {
+              "$ref": "#/$defs/VisualValues"
+            },
+            {
+              "$ref": "#/$defs/KeywordValues"
+            },
+            {
+              "$ref": "#/$defs/OpinionValues"
+            }
+          ],
+          "title": "Values"
+        },
+        "supporting_assertion_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Supporting Assertion Ids",
+          "type": "array"
+        },
+        "exclusions": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Exclusions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "question_id",
+        "status",
+        "values"
+      ],
+      "title": "QuestionResult",
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "question_id": {
+                "const": "price_range"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "values": {
+                "$ref": "#/$defs/PriceValues"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "question_id": {
+                "const": "visual_presentation"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "values": {
+                "$ref": "#/$defs/VisualValues"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "question_id": {
+                "const": "keywords"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "values": {
+                "$ref": "#/$defs/KeywordValues"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "question_id": {
+                "const": "category_opinions"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "values": {
+                "$ref": "#/$defs/OpinionValues"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ReadModel": {
+      "additionalProperties": false,
+      "properties": {
+        "products": {
+          "items": {
+            "$ref": "#/$defs/ProductView"
+          },
+          "title": "Products",
+          "type": "array"
+        },
+        "categories": {
+          "items": {
+            "$ref": "#/$defs/CategoryView"
+          },
+          "title": "Categories",
+          "type": "array"
+        },
+        "question_results": {
+          "items": {
+            "$ref": "#/$defs/QuestionResult"
+          },
+          "title": "Question Results",
+          "type": "array"
+        }
+      },
+      "title": "ReadModel",
+      "type": "object"
+    },
+    "VisualValues": {
+      "additionalProperties": false,
+      "properties": {
+        "appearances": {
+          "items": {
+            "$ref": "#/$defs/AppearanceView"
+          },
+          "title": "Appearances",
+          "type": "array"
+        }
+      },
+      "required": [
+        "appearances"
+      ],
+      "title": "VisualValues",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "ontology_version": {
+      "const": "0.2",
+      "default": "0.2",
+      "title": "Ontology Version",
+      "type": "string"
+    },
+    "processing_id": {
+      "title": "Processing Id",
+      "type": "string"
+    },
+    "result_revision": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Result Revision",
+      "type": "integer"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "scope": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Scope",
+      "type": "object"
+    },
+    "processing_status": {
+      "enum": [
+        "completed",
+        "completed_with_issues",
+        "failed"
+      ],
+      "title": "Processing Status",
+      "type": "string"
+    },
+    "data": {
+      "$ref": "#/$defs/ReadModel"
+    },
+    "knowledge": {
+      "$ref": "#/$defs/Knowledge"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "issues": {
+      "items": {
+        "$ref": "#/$defs/Issue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "usage": {
+      "items": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Usage",
+      "type": "array"
+    }
+  },
+  "required": [
+    "processing_id",
+    "generated_at",
+    "input_refs",
+    "scope",
+    "processing_status",
+    "data",
+    "knowledge",
+    "evidence",
+    "findings",
+    "issues"
+  ],
+  "title": "Output",
+  "type": "object"
+}

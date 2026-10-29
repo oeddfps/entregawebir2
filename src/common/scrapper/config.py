@@ -13,8 +13,8 @@ from .url_policy import URLPolicy
 @dataclass(frozen=True)
 class ScrapperConfig:
     max_threads: int = 4
-    max_hops: int = 2
-    max_sites: int = 100
+    max_hops: int | None = 2
+    max_sites: int | None = 100
     max_retries: int = 2
     audit_dir: str | Path = DEFAULT_AUDIT_DIR
     same_host_only: bool = False
@@ -33,7 +33,8 @@ class ScrapperConfig:
             raise ValueError('max_threads debe ser un entero entre 1 y 50.')
         URLPolicy(self.allowed_domains, self.blocked_domains,
                   self.allowed_url_patterns, self.blocked_url_patterns)
-        if self.max_threads < 1 or self.max_sites < 1 or self.max_hops < 0 or self.max_retries < 0:
+        if ((self.max_sites is not None and (type(self.max_sites) is not int or self.max_sites < 1)) or
+                (self.max_hops is not None and (type(self.max_hops) is not int or self.max_hops < 0)) or self.max_retries < 0):
             raise ValueError('Los límites de threads/sitios deben ser positivos; saltos/reintentos no negativos.')
         if self.traversal not in {'balanced', 'bfs'}:
             raise ValueError('traversal debe ser balanced o bfs.')

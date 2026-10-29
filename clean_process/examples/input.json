@@ -1,0 +1,41 @@
+{
+  "contract_version": "1.0",
+  "samples": [{
+    "sample_id": "synthetic-catalog-1",
+    "source_ref": "document:synthetic-catalog",
+    "content_units": [
+      {"unit_id": "category", "classification": "Categoria", "fields": [{"property": "name", "value": "Daily care"}]},
+      {"unit_id": "product", "classification": "Producto", "fields": [
+        {"property": "name", "value": "Example lotion"},
+        {"property": "url", "value": "https://example.invalid/lotion"},
+        {"property": "image", "value": {"url": "https://example.invalid/lotion.png", "context": "card", "order": 0, "visibility": "visible"}}
+      ]},
+      {"unit_id": "variant", "classification": "Variante", "fields": [{"property": "size", "value": "50 ml"}]},
+      {"unit_id": "offer-a", "classification": "Oferta", "fields": [
+        {"property": "amount", "value": "10.00"}, {"property": "currency", "value": "EUR"},
+        {"property": "price_kind", "value": "exact"}, {"property": "seller", "value": "Seller A"},
+        {"property": "conditions", "value": []}, {"property": "valid_period", "value": "2026-10"}
+      ]},
+      {"unit_id": "offer-b", "classification": "Oferta", "fields": [
+        {"property": "amount", "value": "12.00"}, {"property": "currency", "value": "EUR"},
+        {"property": "price_kind", "value": "exact"}, {"property": "seller", "value": "Seller B"},
+        {"property": "conditions", "value": []}, {"property": "valid_period", "value": "2026-10"}
+      ]},
+      {"unit_id": "copy", "classification": "Texto", "text": "Fast absorption.", "voice": "brand", "language": "en", "fields": [
+        {"property": "keyword", "value": {"quote": "Fast absorption", "label": "Fast absorption"}, "method": "interpretation"},
+        {"property": "topic", "value": {"quote": "Fast absorption", "label": "absorption"}, "method": "interpretation"}
+      ]},
+      {"unit_id": "review", "classification": "Resena", "text": "It irritated my skin.", "voice": "consumer", "fields": [
+        {"property": "aspect_opinion", "value": {"quote": "It irritated my skin.", "aspect": "irritation", "sentiment": "unfavorable", "material": true}, "method": "interpretation"}
+      ]}
+    ],
+    "relations": [
+      {"subject_unit": "product", "predicate": "belongs_to", "object_unit": "category"},
+      {"subject_unit": "product", "predicate": "has_variant", "object_unit": "variant"},
+      {"subject_unit": "offer-a", "predicate": "offers", "object_unit": "variant"},
+      {"subject_unit": "offer-b", "predicate": "offers", "object_unit": "variant"},
+      {"subject_unit": "copy", "predicate": "mentions", "object_unit": "product"},
+      {"subject_unit": "review", "predicate": "evaluates", "object_unit": "product"}
+    ]
+  }]
+}

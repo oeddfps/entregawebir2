@@ -115,13 +115,14 @@ def nodes(value):
 class SemanticMetadataStrategy:
     """Extract declared fields; unannotated articles remain articles, never guessed products."""
 
-    def __init__(self, *, follow_navigation=True, max_entities=200, max_links=300, field_predictor=None):
+    def __init__(self, *, follow_navigation=True, max_entities=200, max_links=300, field_predictor=None, interpret_fields=True):
         if max_entities < 1 or max_links < 1:
             raise ValueError('Los límites de entidades y enlaces deben ser positivos.')
         self.follow_navigation = follow_navigation
         self.max_entities = max_entities
         self.max_links = max_links
         self.field_predictor = field_predictor
+        self.interpret_fields = interpret_fields
 
     def process(self, page, api):
         api.report_expense(StrategyExpense(0, provider='local', operation='semantic_metadata'))
@@ -153,8 +154,13 @@ class SemanticMetadataStrategy:
                     'omitted_navigation_links':sum(r.classification['coverage']['omitted_navigation_links'] for r in results)}
         result = replace(results[0],entities=entities,actions=tuple(actions),
             classification={**results[0].classification,'coverage':coverage})
-        from .semantic_fields import enrich_fields
-        result = enrich_fields(result,capture,page,api,predict=self.field_predictor)
+        if self.interpret_fields:
+            from .semantic_fields import enrich_fields
+            result = enrich_fields(result,capture,page,api,predict=self.field_predictor)
+        else:
+            result = replace(result, classification={**result.classification, 'coverage': {
+                **coverage, 'field_interpretation': {'enabled': False,
+                    'reason': 'Field interpretation disabled by caller; delegated to downstream processing.'}}})
         api.emit_content(PageAnalysis(result,capture=capture,
             doubtful=not any(e.role not in {'metadata','site_menu','breadcrumb'} for e in entities)))
         for entity in entities:

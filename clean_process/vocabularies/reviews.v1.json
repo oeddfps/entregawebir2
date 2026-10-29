@@ -1,0 +1,283 @@
+{
+  "version": "reviews-v1",
+  "normalization": "NFKD accents, casefold, camelCase and separator tokenization; phrase boundaries",
+  "concepts": {
+    "review_count": {
+      "terms": [
+        "review count",
+        "total reviews",
+        "number of reviews",
+        "reviews count",
+        "cantidad de resenas",
+        "numero de resenas",
+        "total de resenas",
+        "cantidad de opiniones",
+        "numero de opiniones",
+        "total de opiniones",
+        "total de comentarios",
+        "quantidade de avaliacoes",
+        "numero de avaliacoes",
+        "nombre d avis",
+        "anzahl rezensionen"
+      ],
+      "definitions": [
+        "Cantidad total de reseñas u opiniones publicadas sobre un producto, no el texto de una reseña.",
+        "The published number of customer reviews or written opinions about a product."
+      ]
+    },
+    "rating_count": {
+      "terms": [
+        "rating count",
+        "ratings count",
+        "total ratings",
+        "number of ratings",
+        "vote count",
+        "votes",
+        "votos",
+        "cantidad de valoraciones",
+        "numero de valoraciones",
+        "total de valoraciones",
+        "cantidad de calificaciones",
+        "numero de puntuaciones",
+        "total de votos",
+        "quantidade de votos",
+        "nombre de notes"
+      ],
+      "definitions": [
+        "Cantidad total de votos o puntuaciones emitidas; no es una puntuación promedio.",
+        "The published count of rating votes or star ratings, not an average score."
+      ]
+    },
+    "aggregate_rating": {
+      "terms": [
+        "aggregate rating",
+        "average rating",
+        "overall rating",
+        "average score",
+        "puntuacion media",
+        "puntuacion promedio",
+        "puntaje promedio",
+        "calificacion promedio",
+        "calificacion general",
+        "valoracion global",
+        "nota media",
+        "media de avaliacoes",
+        "note moyenne",
+        "durchschnittliche bewertung"
+      ],
+      "definitions": [
+        "Puntuación promedio o valoración global que resume múltiples valoraciones de un producto.",
+        "An aggregate, average or overall product rating summarizing multiple votes."
+      ]
+    },
+    "rating": {
+      "terms": [
+        "rating",
+        "rating value",
+        "score",
+        "puntaje",
+        "puntuacion",
+        "calificacion",
+        "nota",
+        "stars",
+        "estrellas",
+        "estrelas",
+        "etoiles",
+        "sterne",
+        "bewertung"
+      ],
+      "definitions": [
+        "Un valor numérico que expresa una puntuación o número de estrellas de una evaluación.",
+        "A numeric evaluation score or star rating; not a vote count or product price."
+      ]
+    },
+    "review_text": {
+      "terms": [
+        "resena",
+        "resenia",
+        "review",
+        "opinion",
+        "comentario",
+        "comment",
+        "feedback",
+        "testimonio",
+        "testimonial",
+        "valoracion",
+        "avaliacao",
+        "resenha",
+        "avis",
+        "recensione",
+        "rezension",
+        "review body",
+        "review text",
+        "review content",
+        "customer review",
+        "consumer review",
+        "customer feedback",
+        "texto de resena",
+        "texto de opinion",
+        "experiencia de uso"
+      ],
+      "explicit_fields": [
+        "review body",
+        "review text",
+        "review content",
+        "texto de resena",
+        "texto de opinion",
+        "texto da avaliacao",
+        "texte de l avis"
+      ],
+      "definitions": [
+        "Texto de una experiencia u opinión individual de un consumidor sobre un producto ya utilizado.",
+        "An individual customer's written review describing their own experience with a product."
+      ]
+    },
+    "review_collection": {
+      "terms": [
+        "reviews",
+        "resenas",
+        "resenias",
+        "opiniones",
+        "comentarios",
+        "comments",
+        "testimonials",
+        "testimonios",
+        "avaliacoes",
+        "resenhas",
+        "recensioni",
+        "rezensionen",
+        "customer reviews",
+        "consumer reviews"
+      ],
+      "definitions": [
+        "Una colección o listado de varias reseñas individuales de consumidores.",
+        "A list or collection containing multiple individual customer reviews."
+      ]
+    },
+    "review_link": {
+      "terms": [
+        "reviews url",
+        "review url",
+        "reviews link",
+        "review link",
+        "enlace de resenas",
+        "ver resenas",
+        "leer opiniones",
+        "read reviews",
+        "see reviews",
+        "view reviews"
+      ],
+      "definitions": [
+        "Enlace o destino para consultar reseñas; no contiene necesariamente los textos.",
+        "A link to read or view customer reviews, not a review itself."
+      ]
+    },
+    "review_control": {
+      "terms": [
+        "write a review",
+        "write review",
+        "submit review",
+        "add review",
+        "leave a review",
+        "escribe tu opinion",
+        "escribir una resena",
+        "deja tu opinion",
+        "enviar opinion",
+        "publicar resena",
+        "avaliar produto",
+        "escreva uma avaliacao",
+        "donner un avis",
+        "laisser un avis",
+        "rezension schreiben"
+      ],
+      "definitions": [
+        "Botón, formulario o invitación para escribir o enviar una reseña nueva.",
+        "A button or form inviting the user to write, add or submit a review."
+      ]
+    },
+    "review_author": {
+      "terms": [
+        "reviewer",
+        "review author",
+        "author",
+        "autor",
+        "usuario",
+        "customer",
+        "consumidor",
+        "comprador",
+        "verified buyer",
+        "verified purchase",
+        "compra verificada",
+        "comprador verificado",
+        "auteur",
+        "avaliador"
+      ],
+      "definitions": [
+        "Autor o comprador al que se atribuye una reseña individual, posiblemente verificado.",
+        "The author, reviewer or verified purchaser associated with an individual review."
+      ]
+    },
+    "rating_scale": {
+      "terms": [
+        "best rating",
+        "worst rating",
+        "maximum rating",
+        "minimum rating",
+        "rating scale",
+        "max rating",
+        "min rating",
+        "escala de puntuacion",
+        "escala de valoracion",
+        "sobre cinco",
+        "out of five",
+        "out of 5",
+        "escala de estrelas"
+      ],
+      "definitions": [
+        "Límites mínimo y máximo de la escala de puntuación, como de una a cinco estrellas.",
+        "The minimum and maximum bounds of a rating scale, such as one to five stars."
+      ]
+    },
+    "other": {
+      "terms": [],
+      "definitions": [
+        "Descripción comercial, precio, instrucciones, preguntas, navegación o cookies; no evidencia de una reseña.",
+        "Marketing product claims, prices, questions, navigation or cookie notices unrelated to customer reviews."
+      ]
+    }
+  },
+  "negative_examples": [
+    {
+      "text": "Precio del producto: 285",
+      "concept": "other"
+    },
+    {
+      "text": "Escribe tu opinión",
+      "concept": "review_control"
+    },
+    {
+      "text": "Nuestra crema deja la piel suave",
+      "concept": "other"
+    },
+    {
+      "text": "Nota legal",
+      "concept": "other"
+    },
+    {
+      "text": "Review your shopping cart",
+      "concept": "other"
+    },
+    {
+      "text": "Shipping comments",
+      "concept": "other"
+    },
+    {
+      "text": "Comentarios sobre este artículo editorial",
+      "concept": "other"
+    },
+    {
+      "text": "Average delivery time",
+      "concept": "other"
+    }
+  ]
+}

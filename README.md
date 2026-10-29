@@ -1,5 +1,16 @@
 # Scrapper
 
+## Clean&Process
+
+El módulo independiente de interpretación y sus contratos JSON están documentados
+en [clean_process/README.md](clean_process/README.md). Incluye una CLI, esquemas
+de entrada/salida y un adaptador externo para los JSON históricos del scraper.
+No inicia el motor ni incorpora interfaz de usuario.
+
+La interfaz independiente de comparación está en **`/compare/`**. Permite dos
+capturas consecutivas o importar JSON guardados. Ver
+[contratos y operación de comparaciones](src/comparison/README.md).
+
 Portal de extracción semántica con Next.js, FastAPI y Playwright. El único
 extractor disponible en la aplicación es `SemanticMetadataStrategy`: utiliza
 HTML, DOM, metadatos y vocabularios estándar. Los campos comerciales sin marcado

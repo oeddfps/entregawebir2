@@ -120,7 +120,7 @@ class Scrapper:
             filtered = policy.disposition(canonical)
             if filtered:
                 return canonical, filtered
-            if depth > config.max_hops:
+            if config.max_hops is not None and depth > config.max_hops:
                 return canonical, 'max_hops'
             if config.same_host_only and parent is not None and urlsplit(canonical).hostname not in seed_hosts:
                 return canonical, 'outside_seed_hosts'
@@ -142,7 +142,7 @@ class Scrapper:
             # Reservation and deduplication are one operation shared by all workers.
             with budget_lock:
                 canonical, decision = disposition(uri, depth, parent, blocked, key or '')
-                if decision == 'queued' and counts['scheduled'] >= config.max_sites:
+                if decision == 'queued' and config.max_sites is not None and counts['scheduled'] >= config.max_sites:
                     decision = 'max_sites'
                 edge = self.audit.record_edge(run_id, parent, via, uri, canonical,
                                               depth, confidence, decision)
@@ -179,7 +179,7 @@ class Scrapper:
                     item = queue[index]
                     del queue[index]
                     with budget_lock:
-                        if counts['scheduled'] >= config.max_sites:
+                        if config.max_sites is not None and counts['scheduled'] >= config.max_sites:
                             self.audit.set_edge_disposition(item.edge_id, 'max_sites')
                             continue
                         visit_id = self.audit.start_visit(run_id, item.uri, item.canonical,

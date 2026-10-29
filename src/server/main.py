@@ -3,6 +3,7 @@ import ipaddress
 import logging
 import subprocess
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 from threading import Lock, Thread
 from typing import Literal
@@ -23,10 +24,24 @@ _scrape_jobs = {}
 _scrape_jobs_lock = Lock()
 _audit_store = AuditStore()
 _log = logging.getLogger('markup_studio')
-app = FastAPI(title='Scrapper', docs_url='/api/docs')
+@asynccontextmanager
+async def lifespan(application):
+    try:
+        yield
+    finally:
+        _comparisons.close()
+
+
+app = FastAPI(title='Scrapper', docs_url='/api/docs', lifespan=lifespan)
 from ..persistent.api import router as persistent_router
 app.include_router(persistent_router(audit=_audit_store))
+from ..comparison.api import router as comparison_router
+from ..comparison.service import ComparisonManager
+_comparisons = ComparisonManager()
+app.include_router(comparison_router(_comparisons))
+
 app.mount('/_next', StaticFiles(directory=FRONTEND_ROOT / '_next', check_dir=False), name='next-assets')
+app.mount('/compare-assets', StaticFiles(directory=FRONTEND_ROOT / 'compare-assets', check_dir=False), name='comparison-assets')
 
 class ExtractRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -68,6 +83,15 @@ def index():
     if not index_path.is_file():
         raise HTTPException(503, 'Compila el portal con npm ci --prefix src/web y npm run build --prefix src/web.')
     return FileResponse(index_path, headers={'Cache-Control':'no-cache'})
+
+
+@app.get('/compare')
+@app.get('/compare/')
+def compare_page():
+    path = FRONTEND_ROOT / 'compare' / 'index.html'
+    if not path.is_file():
+        raise HTTPException(503, 'Compila el portal con npm run build --prefix src/web.')
+    return FileResponse(path, headers={'Cache-Control': 'no-cache'})
 
 @app.get('/api/health')
 def health():
