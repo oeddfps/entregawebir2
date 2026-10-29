@@ -34,8 +34,11 @@ captura sitios ni llama a Jev.
 }
 ```
 
-Orden: captura A, captura B, procesamiento A, procesamiento B. Siempre dos
-fuentes, con límites por fuente/etapa. Captura limitada al host de cada semilla por defecto,
+Orden con dos fuentes: captura A, captura B, procesamiento A, procesamiento B.
+También acepta una sola fuente: captura A y procesamiento A, con la misma
+presentación, evidencia, historial y exportaciones. El modo «Analizar una URL»
+inicia por defecto una visita, cero saltos y 120 segundos por etapa. Las
+importaciones siguen requiriendo dos archivos. Límites por fuente/etapa. Captura limitada al host de cada semilla por defecto,
 un thread y cero reintentos automáticos. El host no restringe a una categoría.
 
 `POST /api/comparisons/import` acepta `sources: [{label, payload}, {label, payload}]`
@@ -48,6 +51,23 @@ servicio. La captura desactiva la interpretación de campos del scraper y la
 delega a Clean&Process; las rutas antiguas mantienen su comportamiento.
 
 ## Consulta y control
+
+El estado incluye `stage_timer` con acción (`capture` / `process`), índice de
+fuente, instante de inicio y límite en segundos de la etapa actual, junto con
+`server_time` para sincronizar la cuenta. El indicador circular cambia de acción
+y reinicia su cuenta en cada etapa, incluso entre fuentes. Muestra el tiempo
+restante hasta el límite confirmado, no una estimación de trabajo pendiente;
+una etapa puede terminar antes. Recargar recupera el inicio guardado. Al finalizar
+o cancelar, el contador se detiene. Los análisis históricos sin timer siguen
+siendo compatibles y no reciben tiempos inventados.
+
+La interfaz muestra un aviso y reproduce un sonido al alcanzar el primer límite
+de tiempo o terminar la ejecución, lo que suceda primero. El aviso se emite una
+sola vez por ejecución en la pestaña y no se repite por polling, cambio de etapa
+o recarga. Abrir un resultado histórico terminado no dispara avisos. El audio se
+habilita con la interacción del usuario al iniciar; si el navegador lo bloquea,
+el aviso sigue visible y ofrece «Reproducir aviso sonoro». No solicita permisos
+de notificaciones del sistema.
 
 Todas las rutas siguientes están bajo `/api/comparisons`:
 
@@ -114,9 +134,14 @@ de procesamiento, contratos, importaciones, evidencias, descargas y regresiones.
 
 ## Recorrido limitado solo por tiempo
 
-En Límites y procesamiento, el botón «Solo tiempo · 5 minutos por fuente» fija
-`max_pages: null`, `max_hops: null`, `same_host_only: false` y 300 segundos
-por etapa. No hay corte por líneas de JSON. La captura puede terminar antes
+En Límites y procesamiento, los cambios permanecen como borrador hasta pulsar
+«Confirmar parámetros». Cancelar o cerrar descarta el borrador. El formulario
+principal muestra los valores aplicados a la próxima ejecución; las ejecuciones
+guardadas o activas no cambian. Cada modo conserva sus límites en la sesión.
+Las opciones rápidas permiten una sola página o explorar durante 2 o 5 minutos.
+Estas últimas fijan `max_pages: null`, `max_hops: null` y 120 o 300 segundos
+de captura, restringida al mismo sitio. El procesamiento tiene un tiempo separado.
+No hay corte por líneas de JSON. La captura puede terminar antes
 si agota las URLs y expansiones reconocidas. Los límites internos de muestreo
 del extractor siguen registrándose en la evidencia de cobertura.
 

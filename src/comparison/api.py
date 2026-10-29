@@ -116,8 +116,8 @@ def router(manager: ComparisonManager):
 
     @api.get('/{identity}/sources/{index}/download/{kind}')
     def download(identity: str, index: int, kind: str):
-        get(identity)
-        if index not in (0, 1) or kind not in ('capture', 'import', 'input', 'output', 'presentation', 'usage'):
+        job = get(identity)
+        if not 0 <= index < len(job['sources']) or kind not in ('capture', 'import', 'input', 'output', 'presentation', 'usage'):
             raise HTTPException(404, 'Archivo no disponible.')
         path = manager.folder(identity) / str(index) / f'{kind}.json'
         if not path.exists():

@@ -18,7 +18,7 @@ function GroupedChart({title,note,groups,names}) {
     <div className="cp-chart-legend">{names.map((name,i)=><span key={i} className={'cp-source-'+i}><i className="cp-dot"/>{'AB'[i]} · {name}</span>)}</div>
     {values.length?<svg viewBox={`0 0 ${width} 260`} role="img" aria-label={`${title}. ${groups.map(g=>`${g.label}: ${names.map((n,i)=>`${n}, ${g.values[i]==null?'sin datos':number(g.values[i])}`).join('; ')}`).join('. ')}`}>
       {Array.from({length:ticks+1},(_,t)=>t).map(t=>{const y=top+height-height*t/ticks;return <g key={t}><line x1={left} x2={left+plot} y1={y} y2={y} stroke="#e5e8ed"/><text x={left-8} y={y+4} textAnchor="end" className="cp-axis-text">{number(Math.round(maximum*t/ticks))}</text></g>;})}
-      {groups.map((g,j)=><g key={g.label}>{g.values.map((v,i)=>{const x=left+band*(j+.5)+(i-1)*bar+3,y=top+height-(v??0)/maximum*height;return <g key={i} className={'cp-source-'+i}>
+      {groups.map((g,j)=><g key={g.label}>{g.values.map((v,i)=>{const x=left+band*(j+.5)+(i-g.values.length/2)*bar+3,y=top+height-(v??0)/maximum*height;return <g key={i} className={'cp-source-'+i}>
         <rect x={x} y={y} width={bar-6} height={v==null?0:Math.max(0,top+height-y)} rx="4" fill="var(--cp-color)"><title>{names[i]} · {g.label}: {v==null?'Sin datos':number(v)}</title></rect>
         <text x={x+(bar-6)/2} y={y-7} textAnchor="middle" className="cp-value-text">{v==null?'—':number(v)}</text>
       </g>;})}<text x={left+band*(j+.5)} y={top+height+25} textAnchor="middle" className="cp-axis-text">{g.label}</text></g>)}
@@ -33,10 +33,10 @@ export default function ComparisonCharts({results,names}) {
   const count=(result,predicate)=>result?result.products.filter(predicate).length:null;
   const imageGroups=[['Sin imágenes',0,0],['1 imagen',1,1],['2–4 imágenes',2,4],['5 o más',5,Infinity]].map(([title,min,max])=>({label:title,values:results.map(r=>count(r,p=>{const n=p.images?.length||0;return n>=min&&n<=max;}))}));
   const reviewGroups=[{label:'Con reseñas',values:results.map(r=>count(r,p=>p.reviews?.length>0))},{label:'Sin reseñas',values:results.map(r=>count(r,p=>!p.reviews?.length))}];
-  return <section className="cp-comparison-charts" aria-label="Gráficas comparativas">
-    <div className="cp-graph-heading"><div><h2>Comparación entre fuentes</h2><p>La misma escala y los mismos indicadores para A y B.</p></div><label>Indicador<select aria-label="Indicador de comparación" value={metric} onChange={e=>setMetric(e.target.value)}>{METRICS.map(([key,title])=><option key={key} value={key}>{title}</option>)}</select></label></div>
+  return <section className="cp-comparison-charts" aria-label={results.length===1?'Gráficas de la fuente':'Gráficas comparativas'}>
+    <div className="cp-graph-heading"><div><h2>{results.length===1?'Resumen de la fuente':'Comparación entre fuentes'}</h2><p>{results.length===1?'Indicadores de la URL analizada.':'La misma escala y los mismos indicadores para A y B.'}</p></div><label>Indicador<select aria-label="Indicador de comparación" value={metric} onChange={e=>setMetric(e.target.value)}>{METRICS.map(([key,title])=><option key={key} value={key}>{title}</option>)}</select></label></div>
     <GroupedChart title={metricTitle} note="Cantidades registradas en esta captura. Las identidades de producto son provisionales." groups={[{label:metricTitle,values:results.map(r=>r?.summary?.[metric]??null)}]} names={names}/>
     <div className="cp-chart-grid"><GroupedChart title="Imágenes por producto" note="Distribución de los usos de imágenes asociados a cada identidad." groups={imageGroups} names={names}/><GroupedChart title="Productos con reseñas textuales" note="Presencia de textos asociados; no representa satisfacción ni el total de votos publicados." groups={reviewGroups} names={names}/></div>
-    <p className="cp-muted">Se compara la muestra capturada. Los valores cero son distintos de los datos pendientes (—). Las capturas parciales y el contenido externo pueden afectar los resultados.</p>
+    <p className="cp-muted">Se muestra la información de la captura. Los valores cero son distintos de los datos pendientes (—). Las capturas parciales y el contenido externo pueden afectar los resultados.</p>
   </section>;
 }

@@ -81,6 +81,16 @@ class Workspace:
         fields = defaultdict(list)
         for field in unit.fields:
             fields[field.property].append(field.value)
+        # User-requested catalog cleanup: apply to the product name only.
+        # Cookie notices elsewhere on a page must not remove legitimate products.
+        excluded_name = next((value for value in fields['name']
+                              if isinstance(value, str) and 'cookie' in value.casefold()), None)
+        if kind == 'Producto' and excluded_name is not None:
+            self.issue('product_excluded_cookie', 'Product excluded by the cookie-name cleanup rule',
+                       refs=[ref], sample_id=sample.sample_id, unit_id=unit.unit_id,
+                       source_ref=sample.source_ref, name=excluded_name,
+                       rule='product_name_contains_cookie_case_insensitive')
+            return None
         # Only compatible, explicitly attributed identities may be associated.
         # A name, SKU or URL alone never establishes product identity.
         key = (sample.sample_id, unit.unit_id)
@@ -202,6 +212,9 @@ class Workspace:
 
     def relations(self, sample):
         for relation in sample.relations:
+            if ((sample.sample_id, relation.subject_unit) not in self.subjects or
+                    (sample.sample_id, relation.object_unit) not in self.subjects):
+                continue  # Cleanup removed an endpoint; never create a dangling relation.
             subject = self.subjects[(sample.sample_id, relation.subject_unit)]
             target = self.subjects[(sample.sample_id, relation.object_unit)]
             sk, tk = self.entities[subject].kind, self.entities[target].kind
@@ -338,7 +351,7 @@ def process(payload: Input | dict, *, interpreter=None, review_recognizer=None, 
             work.ingest(effective_sample, unit, originals[unit.unit_id])
         for decision in decisions:
             uid = decision['unit_id']
-            subject = work.subjects[(sample.sample_id, uid)]
+            subject = work.subjects.get((sample.sample_id, uid))
             ref = identifier('evidence', sample.sample_id, uid)
             work.issue('review_recognition_decision', 'Review candidate evaluated with vocabulary and context',
                        subject, [ref], source_url=sample.source_ref, **decision)
@@ -349,7 +362,7 @@ def process(payload: Input | dict, *, interpreter=None, review_recognizer=None, 
             uid = decision['unit_id']
             ref = identifier('evidence', sample.sample_id, uid)
             work.issue('ontology_recognition_decision', 'Producer class or field evaluated against ontology',
-                       work.subjects[(sample.sample_id, uid)], [ref], source_url=sample.source_ref, **decision)
+                       work.subjects.get((sample.sample_id, uid)), [ref], source_url=sample.source_ref, **decision)
         if ontology_metrics is not None:
             work.issue('ontology_recognition_summary', 'Ontology recognition coverage and model information',
                        sample_id=sample.sample_id, **ontology_metrics)

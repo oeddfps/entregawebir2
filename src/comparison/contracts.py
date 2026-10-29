@@ -32,7 +32,7 @@ class Limits(Contract):
 
 class ComparisonRequest(Contract):
     contract_version: Literal['1.0'] = '1.0'
-    sources: list[Source] = Field(min_length=2, max_length=2)
+    sources: list[Source] = Field(min_length=1, max_length=2)
     limits: Limits = Field(default_factory=Limits)
     interpreter: Literal['declared', 'jev'] = 'declared'
     review_recognition: Literal['off', 'lexical', 'e5'] = 'e5'
@@ -67,6 +67,13 @@ class SourceState(Contract):
     artifacts: list[Literal['capture', 'import', 'input', 'output', 'presentation', 'usage']]
 
 
+class StageTimer(Contract):
+    action: Literal['capture', 'process']
+    source_index: int = Field(ge=0, le=1)
+    started_at: str
+    limit_seconds: int = Field(ge=5, le=600)
+
+
 class ComparisonState(Contract):
     contract_version: Literal['1.0']
     comparison_id: str
@@ -76,5 +83,7 @@ class ComparisonState(Contract):
     finished_at: str | None
     imported: bool
     synthetic: bool = False
-    sources: list[SourceState] = Field(min_length=2, max_length=2)
+    stage_timer: StageTimer | None = None
+    server_time: str | None = None
+    sources: list[SourceState] = Field(min_length=1, max_length=2)
     events: list[dict[str, str]]

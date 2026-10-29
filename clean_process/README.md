@@ -202,6 +202,14 @@ saved outputs are not changed automatically.
 
 ## Ontology recognition (ontology-v1 / ontology 0.3)
 
+Product-name cleanup excludes records whose `name` contains `cookie` or `cookies`,
+case-insensitively, after classification/recognition and before catalog ingestion.
+The original evidence remains available with a `product_excluded_cookie` issue;
+the excluded product contributes no product, image or rating assertions. Relations
+to excluded records are skipped. Cookie mentions in descriptions, page-level
+notices or URLs do not exclude otherwise eligible products. This explicit keyword
+rule applies to new processing; saved outputs are not rewritten automatically.
+
 Recognition is performed only downstream of the producer. No scraper selectors,
 capture rules, navigation or network behavior are changed. The external input
 adapter retains producer class names as `Unit.locator.source_type_names`, unknown

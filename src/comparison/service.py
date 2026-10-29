@@ -54,6 +54,7 @@ class ComparisonManager:
                 source['result_available'] = (folder / str(i) / 'presentation.json').is_file()
                 source['artifacts'] = [kind for kind in ('capture', 'import', 'input', 'output', 'presentation', 'usage')
                                        if (folder / str(i) / f'{kind}.json').is_file()]
+            data['server_time'] = now()
             return data
 
     def list(self):
@@ -80,7 +81,7 @@ class ComparisonManager:
     def create(self, request, *, imported=None):
         with self.lock:
             if sum(not task['cancel'].is_set() for task in self.running.values()) >= 2:
-                raise RuntimeError('Ya hay dos comparaciones activas.')
+                raise RuntimeError('Ya hay dos análisis activos.')
             identity = uuid4().hex
             folder = self.root / identity
             folder.mkdir()
@@ -89,8 +90,8 @@ class ComparisonManager:
                 'phase': 'queued', 'created_at': now(), 'finished_at': None, 'imported': imported is not None,
                 'sources': [{**s, 'status': 'queued', 'capture_status': 'not_required' if imported else 'queued',
                              'processing_status': 'queued', 'stop_reason': None} for s in sources],
-                'events': [{'at': now(), 'message': 'Comparación creada.'}]}
-            for i in range(2):
+                'events': [{'at': now(), 'message': 'Análisis creado.' if len(sources) == 1 else 'Comparación creada.'}]}
+            for i in range(len(sources)):
                 (folder / str(i)).mkdir()
                 if imported:
                     write_json(folder / str(i) / 'import.json', imported[i])
@@ -138,10 +139,12 @@ class ComparisonManager:
         try:
             self.update(identity, status='running')
             if not imported:
-                for i in range(2):
+                for i in range(len(request['sources'])):
                     if cancelled.is_set():
                         break
-                    self.update(identity, phase=f'capture_{i}', event=f'Capturando fuente {"AB"[i]}.')
+                    self.update(identity, phase=f'capture_{i}', event=f'Capturando fuente {"AB"[i]}.',
+                                stage_timer={'action': 'capture', 'source_index': i,
+                                             'started_at': now(), 'limit_seconds': request['limits']['capture_seconds']})
                     self.update(identity, source=i, status='capturing', capture_status='running', started_at=now())
                     reason = self.executor(folder, 'capture', i, request, cancelled, task)
                     if reason != 'done':
@@ -149,13 +152,15 @@ class ComparisonManager:
                     captured = (folder / str(i) / 'capture.json').is_file()
                     self.update(identity, source=i, capture_status='done' if reason == 'done' else 'partial' if captured else 'failed',
                                 status='captured' if captured else 'failed', stop_reason=reason, capture_finished_at=now())
-            for i in range(2):
+            for i in range(len(request['sources'])):
                 if cancelled.is_set():
                     break
                 if not imported and not (folder / str(i) / 'capture.json').exists():
                     self.update(identity, source=i, processing_status='skipped')
                     continue
-                self.update(identity, phase=f'process_{i}', event=f'Procesando fuente {"AB"[i]} con Clean&Process.')
+                self.update(identity, phase=f'process_{i}', event=f'Procesando fuente {"AB"[i]} con Clean&Process.',
+                            stage_timer={'action': 'process', 'source_index': i,
+                                         'started_at': now(), 'limit_seconds': request['limits']['processing_seconds']})
                 self.update(identity, source=i, status='processing', processing_status='running')
                 reason = self.executor(folder, 'process', i, request, cancelled, task)
                 available = (folder / str(i) / 'presentation.json').is_file()
@@ -164,8 +169,9 @@ class ComparisonManager:
             data = self.get(identity)
             ready = sum(s['result_available'] for s in data['sources'])
             partial = any(s['capture_status'] == 'partial' or s.get('stop_reason') in ('error', 'timeout') for s in data['sources'])
-            status = 'cancelled' if cancelled.is_set() else 'done' if ready == 2 and not partial else 'partial' if ready else 'failed'
-            self.update(identity, status=status, phase=status, finished_at=now(), event='Comparación finalizada.' if status == 'done' else 'Se conservaron los resultados disponibles.')
+            status = 'cancelled' if cancelled.is_set() else 'done' if ready == len(data['sources']) and not partial else 'partial' if ready else 'failed'
+            completed = 'Análisis finalizado.' if len(data['sources']) == 1 else 'Comparación finalizada.'
+            self.update(identity, status=status, phase=status, finished_at=now(), event=completed if status == 'done' else 'Se conservaron los resultados disponibles.')
         except Exception:
             self.update(identity, status='cancelled' if cancelled.is_set() else 'failed', phase='failed', finished_at=now(),
                         event='La comparación se detuvo. Los archivos guardados se conservaron.')
@@ -191,7 +197,7 @@ class ComparisonManager:
 
     def result(self, identity, index):
         folder = self.folder(identity)
-        if index not in (0, 1):
+        if not 0 <= index < len(self.get(identity)['sources']):
             raise KeyError(index)
         path = folder / str(index) / 'presentation.json'
         if not path.exists():
@@ -200,7 +206,7 @@ class ComparisonManager:
 
     def evidence(self, identity, index, assertion_ids):
         folder = self.folder(identity)
-        if index not in (0, 1):
+        if not 0 <= index < len(self.get(identity)['sources']):
             raise KeyError(index)
         path = folder / str(index) / 'output.json'
         if not path.exists():

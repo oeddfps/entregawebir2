@@ -82,6 +82,102 @@ def test_two_captures_are_sequential_before_processing(tmp_path):
     assert manager.result(job['comparison_id'], 0)['products']
 
 
+@pytest.mark.parametrize('source_count,imported', [(1, False), (2, False), (2, True)])
+def test_stage_timer_tracks_real_stage_source_and_confirmed_budget(tmp_path, source_count, imported):
+    from datetime import datetime
+    from src.comparison.contracts import ComparisonState
+    observed = []
+    manager = ComparisonManager(tmp_path)
+    def execute(folder, stage, index, spec, cancel, task):
+        state = manager.get(folder.name)
+        timer = state['stage_timer']
+        ComparisonState.model_validate(state)
+        assert timer['action'] == stage and timer['source_index'] == index
+        assert timer['limit_seconds'] == (37 if stage == 'capture' else 19)
+        assert datetime.fromisoformat(timer['started_at']) <= datetime.fromisoformat(state['server_time'])
+        assert state['phase'] == f'{stage}_{index}'
+        assert manager.get(folder.name)['stage_timer'] == timer
+        observed.append((stage, index, timer['started_at']))
+        if stage == 'capture':
+            write_json(folder / str(index) / 'capture.json', [])
+        else:
+            finish(folder, index)
+        return 'done'
+    manager.executor = execute
+    spec = request()
+    spec['sources'] = spec['sources'][:source_count]
+    spec['limits'].update(capture_seconds=37, processing_seconds=19)
+    identity = manager.create(spec, imported=examples() if imported else None)['comparison_id']
+    state = wait(manager, identity)
+    expected = ([] if imported else [('capture', i) for i in range(source_count)]) + [('process', i) for i in range(source_count)]
+    assert [(stage, i) for stage, i, _ in observed] == expected
+    assert len({start for _, _, start in observed}) == len(expected)
+    assert state['status'] == 'done' and state['finished_at']
+    assert ComparisonManager(tmp_path).get(identity)['stage_timer'] == state['stage_timer']
+    manager.close()
+
+
+@pytest.mark.parametrize('capture_reason,expected', [('done', 'done'), ('timeout', 'partial'), ('error', 'failed')])
+def test_single_source_capture_and_real_processing(tmp_path, capture_reason, expected):
+    calls = []
+    manager = ComparisonManager(tmp_path)
+    def execute(folder, stage, index, spec, cancel, task):
+        calls.append((stage, index))
+        if stage == 'capture':
+            if capture_reason != 'error':
+                write_json(folder / str(index) / 'capture.json', examples()[0])
+            return capture_reason
+        return manager._subprocess(folder, stage, index, spec, cancel, task)
+    manager.executor = execute
+    app = FastAPI()
+    app.include_router(router(manager))
+    spec = request()
+    spec['sources'] = spec['sources'][:1]
+    with TestClient(app) as client:
+        response = client.post('/api/comparisons', json=spec)
+        assert response.status_code == 202
+        identity = response.json()['comparison_id']
+        data = wait(manager, identity, timeout=30)
+        assert data['status'] == expected
+        assert len(data['sources']) == 1
+        assert not (manager.folder(identity) / '1').exists()
+        assert client.get(f'/api/comparisons/{identity}').status_code == 200
+        assert client.get(f'/api/comparisons/{identity}/sources/1').status_code == 404
+        assert client.post(f'/api/comparisons/{identity}/sources/1/evidence', json={'assertion_ids': []}).status_code == 404
+        assert client.get(f'/api/comparisons/{identity}/sources/1/download/output').status_code == 404
+        if capture_reason == 'error':
+            assert calls == [('capture', 0)]
+            assert data['sources'][0]['processing_status'] == 'skipped'
+        else:
+            assert calls == [('capture', 0), ('process', 0)]
+            result = client.get(f'/api/comparisons/{identity}/sources/0').json()
+            assert result['products'] and result['charts']
+            refs = result['products'][0]['field_assertion_refs']['name']
+            assert client.post(f'/api/comparisons/{identity}/sources/0/evidence', json={'assertion_ids': refs}).json()['evidence']
+            assert client.get(f'/api/comparisons/{identity}/sources/0/download/output').status_code == 200
+        assert len(ComparisonManager(tmp_path).get(identity)['sources']) == 1
+    manager.close()
+
+
+def test_single_source_cancellation_stops_before_processing(tmp_path):
+    started = Event()
+    calls = []
+    def execute(folder, stage, index, spec, cancel, task):
+        calls.append((stage, index))
+        started.set()
+        assert cancel.wait(3)
+        return 'cancelled'
+    manager = ComparisonManager(tmp_path, executor=execute)
+    spec = request()
+    spec['sources'] = spec['sources'][:1]
+    job = manager.create(spec)
+    assert started.wait(2)
+    manager.cancel(job['comparison_id'])
+    assert wait(manager, job['comparison_id'])['status'] == 'cancelled'
+    assert calls == [('capture', 0)]
+    manager.close()
+
+
 def test_partial_source_is_preserved_and_second_source_still_runs(tmp_path):
     calls = []
     def execute(folder, stage, index, spec, cancel, task):

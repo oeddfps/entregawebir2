@@ -63,6 +63,51 @@ def test_unknown_content_abstains_and_original_is_not_modified():
     assert out.evidence[0].text == payload['samples'][0]['content_units'][0]['text']
 
 
+@pytest.mark.parametrize('name', ['Cookies del navegador', 'Cookie Consent | Products | OneTrust',
+                                  'Administrar COOKIES', 'Cookiebot', 'cookie preferences'])
+def test_cookie_named_products_are_removed_with_original_evidence_retained(name):
+    from copy import deepcopy
+    from clean_process.presentation import present
+    payload = request([unit('consent', 'Producto', name=name, rating='4.3', rating_count='151',
+                            description='Consent management', image='https://neutral.test/image.png')])
+    before = deepcopy(payload)
+    out = process(payload)
+    view = present(out)
+    assert not out.data.products and not out.knowledge.entities and not out.knowledge.assertions
+    assert view['summary']['products'] == 0
+    assert view['summary']['image_uses'] == 0
+    assert view['summary']['published_rating_records'] == 0
+    assert not view['charts']['rating_rows'] and not view['charts']['published_count_rows']
+    issue = next(i for i in out.issues if i.code == 'product_excluded_cookie')
+    assert issue.details['name'] == name and issue.evidence_refs == [out.evidence[0].evidence_id]
+    assert out.evidence[0].fields[0].value == name
+    assert payload == before
+    Output.model_validate_json(out.model_dump_json())
+
+
+def test_cookie_notice_does_not_remove_unrelated_products_or_break_relations():
+    from clean_process.presentation import present
+    units = [unit('p', 'Producto', name='Facial lotion',
+                  description='Cookies are used by this website.', url='https://neutral.test/cookies/item'),
+             unit('cookie', 'Producto', name='Cookies'), unit('collection', 'Coleccion')]
+    out = process(request(units, [relation('collection', 'member', 'cookie'),
+                                  relation('collection', 'member', 'p')]))
+    assert [p.name for p in out.data.products] == ['Facial lotion']
+    assert present(out)['summary']['products'] == 1
+    Output.model_validate_json(out.model_dump_json())
+
+
+def test_cookie_cleanup_also_applies_after_ontology_recognition():
+    from clean_process.ontology_recognition import OntologyRecognizer
+    candidate = unit('consent', name='Cookie Consent', url='https://neutral.test/consent')
+    candidate['locator'] = {'source_type_names': ['Product']}
+    out = process(request([candidate]), ontology_recognizer=OntologyRecognizer())
+    assert not out.data.products
+    assert any(i.code == 'product_excluded_cookie' for i in out.issues)
+    assert not any(i.code == 'ontology_recognition_failure' for i in out.issues)
+    Output.model_validate_json(out.model_dump_json())
+
+
 def test_schema_roundtrip_and_read_model_references():
     out = process(request([unit('p', 'Producto', name='A', url='https://neutral.test/item')]))
     Output.model_validate_json(out.model_dump_json())
