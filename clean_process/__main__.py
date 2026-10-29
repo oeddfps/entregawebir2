@@ -27,7 +27,7 @@ def main(argv=None):
     parser.add_argument('--output', type=Path)
     parser.add_argument('--write-schemas', type=Path)
     parser.add_argument('--interpreter', choices=['declared', 'jev'], default='declared')
-    parser.add_argument('--review-recognition', choices=['off', 'lexical', 'e5'], default='off')
+    parser.add_argument('--review-recognition', '--recognition', dest='review_recognition', choices=['off', 'lexical', 'e5'], default='off')
     parser.add_argument('--max-questions', type=int, default=32)
     parser.add_argument('--max-request-bytes', type=int, default=60000)
     args = parser.parse_args(argv)

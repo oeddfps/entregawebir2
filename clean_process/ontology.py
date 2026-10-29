@@ -19,7 +19,7 @@ TAXONOMY = {
 }
 PROPERTIES = {
     'name', 'description', 'url', 'brand', 'sku', 'gtin', 'size', 'quantity',
-    'amount', 'currency', 'price_kind', 'seller', 'conditions', 'valid_period',
+    'amount', 'previous_amount', 'discount_percent', 'discount_amount', 'discount_status', 'currency_symbol', 'category_name', 'currency', 'price_kind', 'seller', 'conditions', 'valid_period',
     'rating', 'rating_scale', 'rating_count', 'count_kind', 'review_body', 'author', 'date',
     'image', 'order', 'context', 'visibility', 'function', 'keyword', 'topic',
     'aspect_opinion', 'review_identity', 'presentation', 'other',

@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from .contracts import Output, Model, ProductView, ImageUseView, QuestionResult, Finding, Issue, CategoryView
+from .contracts import OfferSummary, Output, Model, ProductView, ImageUseView, QuestionResult, Finding, Issue, CategoryView
 from pydantic import JsonValue
 
 
@@ -70,6 +70,7 @@ class Presentation(Model):
     processing_id: str
     result_revision: int
     generated_at: str
+    offers: list[OfferSummary] = Field(default_factory=list)
     products: list[PresentedProduct]
     categories: list[CategoryView]
     labels: dict[str, str]
@@ -174,6 +175,7 @@ def present(payload: Output | dict):
             'evaluated_subject_refs': targets(finding.subject_ref, 'evaluates')})
     result = {'contract_version': '1.0', 'processing_id': output.processing_id,
             'result_revision': output.result_revision, 'generated_at': output.generated_at,
+            'offers': [o.model_dump(mode='json') for o in output.data.offers],
             'products': products, 'categories': [c.model_dump() for c in output.data.categories],
             'labels': labels, 'questions': questions, 'charts': charts,
             'summary': {'products': len(products), 'textual_reviews': sum(k == 'Resena' for k in entities.values()),

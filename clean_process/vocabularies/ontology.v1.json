@@ -1,0 +1,964 @@
+{
+  "version": "ontology-v1",
+  "ontology_version": "0.3",
+  "concepts": {
+    "entity.Pagina": {
+      "terms": [
+        "página",
+        "page",
+        "webpage",
+        "document",
+        "documento",
+        "web page",
+        "pagina web"
+      ],
+      "definitions": [
+        "Documento o página de origen identificado por URL; no un producto.",
+        "A source web document identified by its page URL."
+      ],
+      "examples": [
+        "Documento de origen con URL y título de página."
+      ],
+      "confusions": [
+        {
+          "text": "Un producto individual identificado por SKU.",
+          "expected": "entity.Producto"
+        }
+      ]
+    },
+    "entity.Coleccion": {
+      "terms": [
+        "colección",
+        "collection",
+        "lista",
+        "list",
+        "listado",
+        "catalog",
+        "catálogo",
+        "results",
+        "resultados",
+        "coleção",
+        "listing"
+      ],
+      "definitions": [
+        "Agrupación de miembros identificables; no la categoría conceptual.",
+        "A collection or list of identifiable members, not a conceptual category."
+      ],
+      "examples": [
+        "Listado que contiene varias fichas de productos con miembros identificados."
+      ],
+      "confusions": [
+        {
+          "text": "La familia conceptual hidratantes faciales.",
+          "expected": "entity.Categoria"
+        }
+      ]
+    },
+    "entity.Aparicion": {
+      "terms": [
+        "aparición",
+        "appearance",
+        "product card",
+        "card",
+        "tarjeta",
+        "ficha",
+        "listing item",
+        "result item",
+        "tile",
+        "cartão"
+      ],
+      "definitions": [
+        "Presencia contextual de un producto o variante dentro de una página o listado.",
+        "A contextual appearance representing a product or variant in a page or list."
+      ],
+      "examples": [
+        "Una tarjeta del catálogo representa al producto identificado P1."
+      ],
+      "confusions": [
+        {
+          "text": "El producto P1 independientemente de la página donde aparece.",
+          "expected": "entity.Producto"
+        }
+      ]
+    },
+    "entity.Producto": {
+      "terms": [
+        "producto",
+        "product",
+        "product item",
+        "artículo",
+        "produto",
+        "commercial item",
+        "product detail"
+      ],
+      "definitions": [
+        "Artículo comercial individual con identidad, nombre, marca o identificadores.",
+        "An individual commercial product with a name and identifying URL or SKU."
+      ],
+      "examples": [
+        "Artículo comercial con nombre, marca, SKU y enlace de detalle."
+      ],
+      "confusions": [
+        {
+          "text": "Una categoría que reúne muchos artículos distintos.",
+          "expected": "entity.Categoria"
+        }
+      ]
+    },
+    "entity.Categoria": {
+      "terms": [
+        "categoría",
+        "category",
+        "product category",
+        "product type",
+        "familia",
+        "department",
+        "categoria",
+        "catégorie"
+      ],
+      "definitions": [
+        "Clasificación conceptual que agrupa productos, no un producto individual.",
+        "A conceptual product category or family grouping individual products."
+      ],
+      "examples": [
+        "Familia de productos que agrupa artículos de cuidado facial."
+      ],
+      "confusions": [
+        {
+          "text": "Una única crema de referencia ABC con URL propia.",
+          "expected": "entity.Producto"
+        }
+      ]
+    },
+    "entity.Variante": {
+      "terms": [
+        "variante",
+        "variant",
+        "product variant",
+        "variation",
+        "presentación",
+        "formato",
+        "product option",
+        "variação"
+      ],
+      "definitions": [
+        "Configuración explícita de un producto: tamaño, cantidad, color o presentación.",
+        "An explicit product variant with size, quantity, format or configuration."
+      ],
+      "examples": [
+        "Presentación de 50 ml de un mismo producto."
+      ],
+      "confusions": [
+        {
+          "text": "Otro producto diferente de la misma marca.",
+          "expected": "entity.Producto"
+        }
+      ]
+    },
+    "entity.Oferta": {
+      "terms": [
+        "oferta",
+        "offer",
+        "price",
+        "precio",
+        "sale",
+        "promotion",
+        "promoción",
+        "descuento",
+        "discount",
+        "preço",
+        "offre"
+      ],
+      "definitions": [
+        "Condiciones comerciales de una presentación; puede tener precio, descuento o ambos. Un precio suele comenzar con $ y un descuento porcentual con % o terminar en %.",
+        "A commercial offer with an amount or explicit discount; $ often indicates price, % a percentage discount, not a rating."
+      ],
+      "examples": [
+        "La presentación se ofrece por $100, con vendedor y condiciones; descuento anunciado %20."
+      ],
+      "confusions": [
+        {
+          "text": "Una fórmula que contiene 20% de un ingrediente.",
+          "expected": "other"
+        }
+      ]
+    },
+    "entity.Imagen": {
+      "terms": [
+        "imagen",
+        "image",
+        "photo",
+        "picture",
+        "foto",
+        "fotografía",
+        "thumbnail",
+        "imagem",
+        "content image"
+      ],
+      "definitions": [
+        "Recurso visual identificado por una referencia; no su uso o posición.",
+        "An image resource identified by its URL or resource reference, not its contextual use."
+      ],
+      "examples": [
+        "Recurso visual identificado por su URL de imagen."
+      ],
+      "confusions": [
+        {
+          "text": "La posición que ocupa esa fotografía dentro de una galería.",
+          "expected": "entity.UsoDeImagen"
+        }
+      ]
+    },
+    "entity.UsoDeImagen": {
+      "terms": [
+        "uso de imagen",
+        "image usage",
+        "image use",
+        "image placement",
+        "gallery item",
+        "carousel image",
+        "imagen principal",
+        "primary image",
+        "image presentation"
+      ],
+      "definitions": [
+        "Uso contextual de un recurso visual con orden, contexto, visibilidad o función declarada.",
+        "A contextual image usage linked to an appearance and image resource."
+      ],
+      "examples": [
+        "La aparición A1 utiliza la imagen I1 en la primera posición de su galería."
+      ],
+      "confusions": [
+        {
+          "text": "El recurso fotográfico sin información sobre dónde se utiliza.",
+          "expected": "entity.Imagen"
+        }
+      ]
+    },
+    "entity.Texto": {
+      "terms": [
+        "texto",
+        "text",
+        "description",
+        "descripción",
+        "body",
+        "content",
+        "contenido",
+        "copy",
+        "descrição"
+      ],
+      "definitions": [
+        "Contenido textual relevante con procedencia e idioma; no necesariamente una reseña.",
+        "Relevant text or description retaining its source and language, not necessarily a review."
+      ],
+      "examples": [
+        "Descripción comercial que explica las características del producto."
+      ],
+      "confusions": [
+        {
+          "text": "Experiencia individual escrita por un comprador identificado.",
+          "expected": "entity.Resena"
+        }
+      ]
+    },
+    "entity.Resena": {
+      "terms": [
+        "reseña",
+        "resenia",
+        "resena",
+        "review",
+        "customer review",
+        "consumer review",
+        "opinion",
+        "comentario",
+        "testimonial",
+        "avaliação",
+        "resenha",
+        "avis",
+        "Rezension"
+      ],
+      "definitions": [
+        "Opinión o experiencia individual atribuida a un sujeto. Una invitación a opinar no es una reseña.",
+        "An individual customer review with a body and attribution, not a review submission button."
+      ],
+      "examples": [
+        "Compré este producto, lo usé una semana y me resultó cómodo."
+      ],
+      "confusions": [
+        {
+          "text": "Escribe tu opinión sobre este producto.",
+          "expected": "review_control"
+        }
+      ]
+    },
+    "entity.ValoracionAgregada": {
+      "terms": [
+        "valoración agregada",
+        "aggregate rating",
+        "average rating",
+        "overall rating",
+        "puntuación media",
+        "rating summary",
+        "review summary",
+        "nota média"
+      ],
+      "definitions": [
+        "Puntuación y cantidad publicadas que resumen valoraciones; no un texto individual.",
+        "An aggregate rating or published score/count summarizing evaluations, not individual review text."
+      ],
+      "examples": [
+        "Promedio de 4,7 puntos basado en 285 valoraciones publicadas."
+      ],
+      "confusions": [
+        {
+          "text": "Una sola persona relata su experiencia.",
+          "expected": "entity.Resena"
+        }
+      ]
+    },
+    "property.name": {
+      "terms": [
+        "nombre",
+        "name",
+        "product name",
+        "nombre del producto",
+        "nome",
+        "title",
+        "título",
+        "product title",
+        "nombre comercial"
+      ],
+      "definitions": [
+        "Campo que declara nombre de la entidad; conservar el valor y su procedencia.",
+        "An explicit name field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.brand": {
+      "terms": [
+        "marca",
+        "brand",
+        "brand name",
+        "fabricante",
+        "manufacturer",
+        "marque"
+      ],
+      "definitions": [
+        "Campo que declara marca de la entidad; conservar el valor y su procedencia.",
+        "An explicit brand field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.url": {
+      "terms": [
+        "url",
+        "link",
+        "product url",
+        "product link",
+        "enlace",
+        "href",
+        "canonical url"
+      ],
+      "definitions": [
+        "Campo que declara url de la entidad; conservar el valor y su procedencia.",
+        "An explicit url field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.sku": {
+      "terms": [
+        "sku",
+        "reference",
+        "referencia",
+        "product code",
+        "código de producto"
+      ],
+      "definitions": [
+        "Campo que declara sku de la entidad; conservar el valor y su procedencia.",
+        "An explicit sku field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.gtin": {
+      "terms": [
+        "gtin",
+        "ean",
+        "upc",
+        "barcode",
+        "código de barras"
+      ],
+      "definitions": [
+        "Campo que declara gtin de la entidad; conservar el valor y su procedencia.",
+        "An explicit gtin field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.description": {
+      "terms": [
+        "descripción",
+        "description",
+        "product description",
+        "descripción del producto",
+        "descrição",
+        "body copy"
+      ],
+      "definitions": [
+        "Campo que declara descripción de la entidad; conservar el valor y su procedencia.",
+        "An explicit description field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.size": {
+      "terms": [
+        "tamaño",
+        "size",
+        "volume",
+        "volumen",
+        "capacidad",
+        "tamanho"
+      ],
+      "definitions": [
+        "Campo que declara tamaño de la entidad; conservar el valor y su procedencia.",
+        "An explicit size field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.quantity": {
+      "terms": [
+        "cantidad",
+        "quantity",
+        "pack size",
+        "unidades",
+        "quantidade"
+      ],
+      "definitions": [
+        "Campo que declara cantidad de la entidad; conservar el valor y su procedencia.",
+        "An explicit quantity field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.presentation": {
+      "terms": [
+        "presentación",
+        "presentation",
+        "format",
+        "formato",
+        "configuration",
+        "configuración"
+      ],
+      "definitions": [
+        "Campo que declara presentación de la entidad; conservar el valor y su procedencia.",
+        "An explicit presentation field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.category_name": {
+      "terms": [
+        "category name",
+        "nombre de categoría",
+        "product category",
+        "categoria"
+      ],
+      "definitions": [
+        "Campo que declara category name de la entidad; conservar el valor y su procedencia.",
+        "An explicit category name field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.amount": {
+      "terms": [
+        "precio",
+        "price",
+        "amount",
+        "importe",
+        "current price",
+        "precio actual",
+        "preço",
+        "valor de venta",
+        "offer price",
+        "precio de oferta",
+        "oferta",
+        "sale price",
+        "precio de venta"
+      ],
+      "definitions": [
+        "Campo que declara precio de la entidad; conservar el valor y su procedencia.",
+        "An explicit amount field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.previous_amount": {
+      "terms": [
+        "precio anterior",
+        "previous price",
+        "old price",
+        "original price",
+        "precio original",
+        "regular price",
+        "preço anterior"
+      ],
+      "definitions": [
+        "Campo que declara precio anterior de la entidad; conservar el valor y su procedencia.",
+        "An explicit previous amount field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.currency": {
+      "terms": [
+        "moneda",
+        "currency",
+        "currency code",
+        "price currency",
+        "divisa",
+        "moeda"
+      ],
+      "definitions": [
+        "Campo que declara moneda de la entidad; conservar el valor y su procedencia.",
+        "An explicit currency field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.currency_symbol": {
+      "terms": [
+        "currency symbol",
+        "símbolo de moneda",
+        "simbolo monetario"
+      ],
+      "definitions": [
+        "Campo que declara currency symbol de la entidad; conservar el valor y su procedencia.",
+        "An explicit currency symbol field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.seller": {
+      "terms": [
+        "vendedor",
+        "seller",
+        "merchant",
+        "sold by",
+        "vendido por",
+        "loja"
+      ],
+      "definitions": [
+        "Campo que declara vendedor de la entidad; conservar el valor y su procedencia.",
+        "An explicit seller field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.conditions": {
+      "terms": [
+        "condiciones",
+        "conditions",
+        "terms",
+        "condições"
+      ],
+      "definitions": [
+        "Campo que declara condiciones de la entidad; conservar el valor y su procedencia.",
+        "An explicit conditions field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.valid_period": {
+      "terms": [
+        "vigencia",
+        "valid period",
+        "validity",
+        "periodo de validez",
+        "validade"
+      ],
+      "definitions": [
+        "Campo que declara vigencia de la entidad; conservar el valor y su procedencia.",
+        "An explicit valid period field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.price_kind": {
+      "terms": [
+        "price kind",
+        "tipo de precio",
+        "price type"
+      ],
+      "definitions": [
+        "Campo que declara price kind de la entidad; conservar el valor y su procedencia.",
+        "An explicit price kind field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.discount_percent": {
+      "terms": [
+        "descuento",
+        "discount",
+        "discount percent",
+        "discount percentage",
+        "porcentaje de descuento",
+        "rebaja",
+        "desconto",
+        "percent off"
+      ],
+      "definitions": [
+        "Campo que declara descuento de la entidad; conservar el valor y su procedencia.",
+        "An explicit discount percent field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.discount_amount": {
+      "terms": [
+        "discount amount",
+        "importe de descuento",
+        "ahorro",
+        "savings amount",
+        "valor de desconto"
+      ],
+      "definitions": [
+        "Campo que declara discount amount de la entidad; conservar el valor y su procedencia.",
+        "An explicit discount amount field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.discount_status": {
+      "terms": [
+        "discount status",
+        "has discount",
+        "is discounted",
+        "con descuento",
+        "sin descuento",
+        "no discount",
+        "non discounted",
+        "regular offer"
+      ],
+      "definitions": [
+        "Campo que declara discount status de la entidad; conservar el valor y su procedencia.",
+        "An explicit discount status field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.image": {
+      "terms": [
+        "imagen",
+        "image",
+        "photo",
+        "picture",
+        "image url",
+        "thumbnail",
+        "imagem"
+      ],
+      "definitions": [
+        "Campo que declara imagen de la entidad; conservar el valor y su procedencia.",
+        "An explicit image field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.order": {
+      "terms": [
+        "orden",
+        "order",
+        "position",
+        "posición",
+        "index",
+        "ordem"
+      ],
+      "definitions": [
+        "Campo que declara orden de la entidad; conservar el valor y su procedencia.",
+        "An explicit order field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.context": {
+      "terms": [
+        "contexto",
+        "context",
+        "placement",
+        "image context"
+      ],
+      "definitions": [
+        "Campo que declara contexto de la entidad; conservar el valor y su procedencia.",
+        "An explicit context field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.visibility": {
+      "terms": [
+        "visibilidad",
+        "visibility",
+        "visible",
+        "hidden",
+        "oculta",
+        "visível"
+      ],
+      "definitions": [
+        "Campo que declara visibilidad de la entidad; conservar el valor y su procedencia.",
+        "An explicit visibility field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.function": {
+      "terms": [
+        "función de imagen",
+        "image function",
+        "image purpose",
+        "función visual"
+      ],
+      "definitions": [
+        "Campo que declara función de imagen de la entidad; conservar el valor y su procedencia.",
+        "An explicit function field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.review_body": {
+      "terms": [
+        "review body",
+        "review text",
+        "review content",
+        "texto de reseña",
+        "texto de opinion"
+      ],
+      "definitions": [
+        "Campo que declara review body de la entidad; conservar el valor y su procedencia.",
+        "An explicit review body field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.author": {
+      "terms": [
+        "autor",
+        "author",
+        "reviewer",
+        "review author",
+        "auteur"
+      ],
+      "definitions": [
+        "Campo que declara autor de la entidad; conservar el valor y su procedencia.",
+        "An explicit author field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.date": {
+      "terms": [
+        "fecha",
+        "date",
+        "review date",
+        "date published",
+        "fecha de reseña"
+      ],
+      "definitions": [
+        "Campo que declara fecha de la entidad; conservar el valor y su procedencia.",
+        "An explicit date field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.rating": {
+      "terms": [
+        "puntaje",
+        "puntuación",
+        "rating",
+        "rating value",
+        "score",
+        "calificación",
+        "stars"
+      ],
+      "definitions": [
+        "Campo que declara puntaje de la entidad; conservar el valor y su procedencia.",
+        "An explicit rating field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.rating_count": {
+      "terms": [
+        "rating count",
+        "total ratings",
+        "cantidad de valoraciones"
+      ],
+      "definitions": [
+        "Campo que declara rating count de la entidad; conservar el valor y su procedencia.",
+        "An explicit rating count field describing an entity, requiring a compatible value."
+      ]
+    },
+    "property.rating_scale": {
+      "terms": [
+        "rating scale",
+        "escala de puntuación",
+        "escala de estrellas"
+      ],
+      "definitions": [
+        "Campo que declara rating scale de la entidad; conservar el valor y su procedencia.",
+        "An explicit rating scale field describing an entity, requiring a compatible value."
+      ]
+    },
+    "relation.contains": {
+      "terms": [
+        "contains",
+        "contiene",
+        "includes",
+        "incluye",
+        "contained items",
+        "contenidos"
+      ],
+      "definitions": [
+        "Relación contains: contains, contiene, includes, incluye, contained items, contenidos; requiere extremos identificados y tipos compatibles.",
+        "An explicit contains relationship between identified source and target entities."
+      ]
+    },
+    "relation.member": {
+      "terms": [
+        "member",
+        "member of",
+        "miembro",
+        "elemento del listado",
+        "collection member"
+      ],
+      "definitions": [
+        "Relación member: member, member of, miembro, elemento del listado, collection member; requiere extremos identificados y tipos compatibles.",
+        "An explicit member relationship between identified source and target entities."
+      ]
+    },
+    "relation.represents": {
+      "terms": [
+        "represents",
+        "representa",
+        "representation of",
+        "ficha de",
+        "card for"
+      ],
+      "definitions": [
+        "Relación represents: represents, representa, representation of, ficha de, card for; requiere extremos identificados y tipos compatibles.",
+        "An explicit represents relationship between identified source and target entities."
+      ]
+    },
+    "relation.belongs_to": {
+      "terms": [
+        "belongs to",
+        "belongs to category",
+        "pertenece a",
+        "categoría de",
+        "categorized as"
+      ],
+      "definitions": [
+        "Relación belongs_to: belongs to, belongs to category, pertenece a, categoría de, categorized as; requiere extremos identificados y tipos compatibles.",
+        "An explicit belongs to relationship between identified source and target entities."
+      ]
+    },
+    "relation.has_variant": {
+      "terms": [
+        "has variant",
+        "has variants",
+        "variants",
+        "variantes",
+        "opciones de presentación"
+      ],
+      "definitions": [
+        "Relación has_variant: has variant, has variants, variants, variantes, opciones de presentación; requiere extremos identificados y tipos compatibles.",
+        "An explicit has variant relationship between identified source and target entities."
+      ]
+    },
+    "relation.offers": {
+      "terms": [
+        "offers",
+        "offer for",
+        "oferta para",
+        "variant offered",
+        "presentación ofertada"
+      ],
+      "definitions": [
+        "Relación offers: offers, offer for, oferta para, variant offered, presentación ofertada; requiere extremos identificados y tipos compatibles.",
+        "An explicit offers relationship between identified source and target entities."
+      ]
+    },
+    "relation.presents": {
+      "terms": [
+        "presents",
+        "presenta",
+        "displays",
+        "muestra",
+        "image usages"
+      ],
+      "definitions": [
+        "Relación presents: presents, presenta, displays, muestra, image usages; requiere extremos identificados y tipos compatibles.",
+        "An explicit presents relationship between identified source and target entities."
+      ]
+    },
+    "relation.uses": {
+      "terms": [
+        "uses",
+        "utiliza",
+        "uses image",
+        "image resource",
+        "recurso utilizado"
+      ],
+      "definitions": [
+        "Relación uses: uses, utiliza, uses image, image resource, recurso utilizado; requiere extremos identificados y tipos compatibles.",
+        "An explicit uses relationship between identified source and target entities."
+      ]
+    },
+    "relation.mentions": {
+      "terms": [
+        "mentions",
+        "menciona",
+        "refers to",
+        "se refiere a",
+        "describes"
+      ],
+      "definitions": [
+        "Relación mentions: mentions, menciona, refers to, se refiere a, describes; requiere extremos identificados y tipos compatibles.",
+        "An explicit mentions relationship between identified source and target entities."
+      ]
+    },
+    "relation.evaluates": {
+      "terms": [
+        "evaluates",
+        "evalúa",
+        "review of",
+        "opina sobre",
+        "experience with"
+      ],
+      "definitions": [
+        "Relación evaluates: evaluates, evalúa, review of, opina sobre, experience with; requiere extremos identificados y tipos compatibles.",
+        "An explicit evaluates relationship between identified source and target entities."
+      ]
+    },
+    "relation.summarizes": {
+      "terms": [
+        "summarizes",
+        "resume",
+        "aggregate for",
+        "ratings for",
+        "valoraciones de"
+      ],
+      "definitions": [
+        "Relación summarizes: summarizes, resume, aggregate for, ratings for, valoraciones de; requiere extremos identificados y tipos compatibles.",
+        "An explicit summarizes relationship between identified source and target entities."
+      ]
+    }
+  },
+  "negative_examples": [
+    {
+      "text": "Nuestra crema ofrece hidratación; no es una oferta de precio.",
+      "concept": "other"
+    },
+    {
+      "text": "Contiene 10% de ingrediente activo; no anuncia descuento.",
+      "concept": "other"
+    },
+    {
+      "text": "Escribe tu opinión para participar.",
+      "concept": "other"
+    },
+    {
+      "text": "Un producto individual identificado por SKU.",
+      "concept": "entity.Producto"
+    },
+    {
+      "text": "La familia conceptual hidratantes faciales.",
+      "concept": "entity.Categoria"
+    },
+    {
+      "text": "El producto P1 independientemente de la página donde aparece.",
+      "concept": "entity.Producto"
+    },
+    {
+      "text": "Una categoría que reúne muchos artículos distintos.",
+      "concept": "entity.Categoria"
+    },
+    {
+      "text": "Una única crema de referencia ABC con URL propia.",
+      "concept": "entity.Producto"
+    },
+    {
+      "text": "Otro producto diferente de la misma marca.",
+      "concept": "entity.Producto"
+    },
+    {
+      "text": "Una fórmula que contiene 20% de un ingrediente.",
+      "concept": "other"
+    },
+    {
+      "text": "La posición que ocupa esa fotografía dentro de una galería.",
+      "concept": "entity.UsoDeImagen"
+    },
+    {
+      "text": "El recurso fotográfico sin información sobre dónde se utiliza.",
+      "concept": "entity.Imagen"
+    },
+    {
+      "text": "Experiencia individual escrita por un comprador identificado.",
+      "concept": "entity.Resena"
+    },
+    {
+      "text": "Escribe tu opinión sobre este producto.",
+      "concept": "review_control"
+    },
+    {
+      "text": "Una sola persona relata su experiencia.",
+      "concept": "entity.Resena"
+    }
+  ]
+}

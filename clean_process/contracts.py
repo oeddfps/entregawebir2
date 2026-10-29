@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
 
 VERSION = '1.0'
-ONTOLOGY_VERSION = '0.2'
+ONTOLOGY_VERSION = '0.3'
 QUESTIONS = ('price_range', 'visual_presentation', 'keywords', 'category_opinions')
 Kind = Literal['Pagina', 'Coleccion', 'Aparicion', 'Producto', 'Categoria',
                'Variante', 'Oferta', 'Imagen', 'UsoDeImagen', 'Texto', 'Resena',
@@ -159,7 +159,15 @@ class Finding(Model):
     independence: Literal['known', 'unknown'] = 'unknown'
 
 
-class OfferView(Model):
+class DiscountFields(Model):
+    discount_status: Literal['discount', 'no_discount', 'unknown', 'conflict'] = 'unknown'
+    discount_percent: str | None = None
+    discount_amount: str | None = None
+    previous_amount: str | None = None
+    currency_symbol: str | None = None
+
+
+class OfferView(DiscountFields):
     offer_ref: str
     amount: str
     kind: Literal['exact', 'from', 'until', 'previous', 'installment']
@@ -295,7 +303,16 @@ class CategoryView(Model):
     field_assertion_refs: dict[str, list[str]]
 
 
+class OfferSummary(DiscountFields):
+    entity_id: str
+    amount: JsonValue = None
+    currency: JsonValue = None
+    variant_refs: list[str] = Field(default_factory=list)
+    field_assertion_refs: dict[str, list[str]] = Field(default_factory=dict)
+
+
 class ReadModel(Model):
+    offers: list[OfferSummary] = Field(default_factory=list)
     products: list[ProductView] = Field(default_factory=list)
     categories: list[CategoryView] = Field(default_factory=list)
     question_results: list[QuestionResult] = Field(default_factory=list)
@@ -308,7 +325,7 @@ class Knowledge(Model):
 
 class Output(Model):
     contract_version: Literal['1.0'] = VERSION
-    ontology_version: Literal['0.2'] = ONTOLOGY_VERSION
+    ontology_version: Literal['0.2', '0.3'] = ONTOLOGY_VERSION
     processing_id: str
     result_revision: int = Field(default=1, ge=1)
     generated_at: str
@@ -380,6 +397,7 @@ class Output(Model):
                 for item in value:
                     read_refs(item)
         read_refs([p.model_dump() for p in self.data.products])
+        read_refs([o.model_dump() for o in self.data.offers])
         read_refs([c.model_dump() for c in self.data.categories])
         for q in self.data.question_results:
             read_refs(q.values.model_dump())

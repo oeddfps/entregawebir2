@@ -47,6 +47,8 @@ def price_results(w):
         key = (variants[0], currency, json.dumps(conditions, sort_keys=True), comparison_time)
         groups[key].append({'offer_ref': eid, 'amount': str(value), 'kind': kind,
                             'seller': w.value(eid, 'seller'), 'valid_period': period,
+                            'discount_status': w.value(eid, 'discount_status', 'unknown'),
+                            **{p: w.value(eid, p) for p in ('discount_percent', 'discount_amount', 'previous_amount', 'currency_symbol')},
                             'assertion_refs': refs})
     values, refs = [], []
     for (variant, currency, conditions, time_scope), offers in groups.items():

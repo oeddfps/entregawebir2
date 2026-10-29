@@ -728,9 +728,166 @@
       "title": "Knowledge",
       "type": "object"
     },
+    "OfferSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "discount_status": {
+          "default": "unknown",
+          "enum": [
+            "discount",
+            "no_discount",
+            "unknown",
+            "conflict"
+          ],
+          "title": "Discount Status",
+          "type": "string"
+        },
+        "discount_percent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discount Percent"
+        },
+        "discount_amount": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discount Amount"
+        },
+        "previous_amount": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Amount"
+        },
+        "currency_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Currency Symbol"
+        },
+        "entity_id": {
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "amount": {
+          "$ref": "#/$defs/JsonValue",
+          "default": null
+        },
+        "currency": {
+          "$ref": "#/$defs/JsonValue",
+          "default": null
+        },
+        "variant_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Variant Refs",
+          "type": "array"
+        },
+        "field_assertion_refs": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Field Assertion Refs",
+          "type": "object"
+        }
+      },
+      "required": [
+        "entity_id"
+      ],
+      "title": "OfferSummary",
+      "type": "object"
+    },
     "OfferView": {
       "additionalProperties": false,
       "properties": {
+        "discount_status": {
+          "default": "unknown",
+          "enum": [
+            "discount",
+            "no_discount",
+            "unknown",
+            "conflict"
+          ],
+          "title": "Discount Status",
+          "type": "string"
+        },
+        "discount_percent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discount Percent"
+        },
+        "discount_amount": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discount Amount"
+        },
+        "previous_amount": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Amount"
+        },
+        "currency_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Currency Symbol"
+        },
         "offer_ref": {
           "title": "Offer Ref",
           "type": "string"
@@ -1266,6 +1423,13 @@
     "ReadModel": {
       "additionalProperties": false,
       "properties": {
+        "offers": {
+          "items": {
+            "$ref": "#/$defs/OfferSummary"
+          },
+          "title": "Offers",
+          "type": "array"
+        },
         "products": {
           "items": {
             "$ref": "#/$defs/ProductView"
@@ -1318,8 +1482,11 @@
       "type": "string"
     },
     "ontology_version": {
-      "const": "0.2",
-      "default": "0.2",
+      "default": "0.3",
+      "enum": [
+        "0.2",
+        "0.3"
+      ],
       "title": "Ontology Version",
       "type": "string"
     },

@@ -47,6 +47,9 @@ def from_scraper(payload, *, export_ref='scraper-export'):
             uid = f'block-{index}'
             attrs = entity.get('attributes') or {}
             source = attrs.get('source')
+            schema_types = attrs.get('schema_types') or []
+            if isinstance(schema_types, str):
+                schema_types = [schema_types]
             method = 'source_declaration' if source in ('jsonld', 'head') else 'interpretation'
             fields, name, destination = [], None, None
             raw_fields = {}
@@ -58,7 +61,7 @@ def from_scraper(payload, *, export_ref='scraper-export'):
                         fields.append(Datum(property='raw_field', value={'name': part.get('class') or '',
                             'label': part.get('label') or part.get('name') or (raw_value.get('property') if isinstance(raw_value, dict) else '') or '', 'value': raw},
                             locator={'json_pointer': f'/pages/{page_index}/result/entities/{index}/parts/{pi}/values/{vi}',
-                                     'original_value': raw_value}, method=method))
+                                     'original_value': raw_value, 'producer_class': part.get('class')}, method=method))
                     continue
                 for vi, value in enumerate(part.get('values') or []):
                     raw = value.get('href') if prop == 'url' else value.get('src') if prop == 'image' else value.get('text')
@@ -69,7 +72,7 @@ def from_scraper(payload, *, export_ref='scraper-export'):
                     raw_fields.setdefault(prop, []).append(raw)
                     fields.append(Datum(property=prop, value=raw, method=method,
                         locator={'json_pointer': f'/pages/{page_index}/result/entities/{index}/parts/{pi}/values/{vi}',
-                                 'original_value': value}))
+                                 'original_value': value, 'producer_class': part.get('class')}))
                     if part.get('class') in ('review_count', 'rating_count'):
                         fields.append(Datum(property='count_kind', method=method,
                             value='reviews' if part['class'] == 'review_count' else 'ratings',
@@ -89,6 +92,9 @@ def from_scraper(payload, *, export_ref='scraper-export'):
                             fields.append(Datum(property='raw_field', value={'name': bound, 'value': obj[bound]},
                                 method='source_declaration', locator={'declared_property': bound,
                                     'original_value': obj[bound]}))
+            if 'value' in entity:
+                fields.append(Datum(property='raw_field', value={'name': entity.get('class') or entity.get('role') or '', 'value': entity['value']},
+                    locator={'json_pointer': f'/pages/{page_index}/result/entities/{index}/value', 'original_value': entity['value']}))
             role = entity.get('role')
             kind = {'semantic_collection': 'Coleccion', 'product': 'Producto'}.get(role, 'Texto')
             if role == 'semantic_item' and name and destination:
@@ -99,7 +105,8 @@ def from_scraper(payload, *, export_ref='scraper-export'):
             unit = Unit(unit_id=uid, text=entity.get('text') or '', classification=kind,
                 classification_method=method, fields=fields,
                 locator={'export_ref': export_ref, 'page_index': page_index, 'block_index': index,
-                         'selector': entity.get('selector'), 'original_block': entity})
+                         'selector': entity.get('selector'), 'original_block': entity,
+                         'source_type_names': [str(v) for v in [entity.get('class'), entity.get('role'), *schema_types] if isinstance(v, str)]})
             units.append(unit)
             relations.append(Relation(subject_unit=page_id, predicate='contains', object_unit=uid, method='observation'))
             if kind == 'Coleccion':

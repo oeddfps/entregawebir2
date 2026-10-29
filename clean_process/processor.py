@@ -4,6 +4,8 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, timezone
 import json
+import re
+from decimal import Decimal
 from uuid import uuid4
 
 from .contracts import (Input, Output, Entity, Evidence, Assertion, Issue, Finding,
@@ -129,7 +131,7 @@ class Workspace:
                            [ref], property=field.property)
                 continue
             invalid = False
-            if field.property in ('name', 'description', 'brand', 'sku', 'gtin', 'currency', 'seller', 'review_body', 'author'):
+            if field.property in ('name', 'description', 'brand', 'sku', 'gtin', 'currency', 'seller', 'review_body', 'author', 'currency_symbol', 'category_name'):
                 invalid = not isinstance(field.value, str) or not field.value.strip()
             elif field.property == 'url':
                 invalid = not isinstance(field.value, str) or not canonical_url(field.value)
@@ -143,6 +145,13 @@ class Workspace:
                 invalid = field.value not in ('visible', 'hidden', 'unknown')
             elif field.property == 'order':
                 invalid = type(field.value) is not int or field.value < 0
+            elif field.property == 'discount_status':
+                invalid = field.value not in ('discount', 'no_discount', 'unknown', 'conflict')
+            elif field.property in ('discount_percent', 'discount_amount', 'previous_amount'):
+                invalid = not isinstance(field.value, str) or not re.fullmatch(r'\d+(?:\.\d+)?', field.value)
+                if not invalid:
+                    number = Decimal(field.value)
+                    invalid = not number.is_finite() or number < 0 or (field.property == 'discount_percent' and number > 100)
             elif field.property == 'count_kind':
                 invalid = field.value not in ('ratings', 'reviews', 'unspecified')
             if invalid:
@@ -208,6 +217,7 @@ class Workspace:
 
     def conflicts(self):
         scalar = {'amount', 'currency', 'price_kind', 'seller', 'conditions', 'valid_period',
+                  'discount_status', 'discount_percent', 'discount_amount', 'previous_amount', 'currency_symbol',
                   'sku', 'gtin', 'rating', 'rating_scale', 'rating_count', 'count_kind', 'size', 'quantity'}
         groups = defaultdict(list)
         for a in self.assertions:
@@ -241,10 +251,20 @@ class Workspace:
                 categories.append({'entity_id': eid, 'identity_status': entity.identity_status,
                     'name': self.value(eid, 'name'),
                     'field_assertion_refs': {'name': [a.assertion_id for a in self.values(eid, 'name')]}})
-        return ReadModel(products=products, categories=categories)
+        offers = []
+        for entity in self.entities.values():
+            if entity.kind != 'Oferta':
+                continue
+            eid = entity.entity_id
+            props = ('amount', 'currency', 'discount_status', 'discount_percent', 'discount_amount', 'previous_amount', 'currency_symbol')
+            row = {prop: self.value(eid, prop) for prop in props}
+            row['discount_status'] = 'conflict' if any(a.subject_ref == eid and a.predicate.startswith('discount_') and a.status == 'conflict' for a in self.assertions) else row['discount_status'] or 'unknown'
+            offers.append({'entity_id': eid, 'variant_refs': self.targets(eid, 'offers'), **row,
+                'field_assertion_refs': {prop: [a.assertion_id for a in self.values(eid, prop)] for prop in props}})
+        return ReadModel(products=products, categories=categories, offers=offers)
 
 
-def process(payload: Input | dict, *, interpreter=None, review_recognizer=None) -> Output:
+def process(payload: Input | dict, *, interpreter=None, review_recognizer=None, ontology_recognizer=None) -> Output:
     """Run synchronously without fetching sources or starting the scraper.
 
     No interpreter means declared/previously interpreted data only. Unknown text
@@ -253,6 +273,9 @@ def process(payload: Input | dict, *, interpreter=None, review_recognizer=None) 
     request = Input.model_validate(payload)
     work = Workspace(request)
     usage = []
+    if ontology_recognizer is None and review_recognizer is not None:
+        from .ontology_recognition import OntologyRecognizer
+        ontology_recognizer = OntologyRecognizer(review_recognizer.scorer)
     active_samples = [s for s in request.samples if
         ('source_refs' not in request.scope or s.source_ref in request.scope['source_refs']) and
         ('sample_refs' not in request.scope or s.sample_id in request.scope['sample_refs'])]
@@ -299,9 +322,20 @@ def process(payload: Input | dict, *, interpreter=None, review_recognizer=None) 
             except Exception:
                 work.issue('review_recognition_failure', 'Review recognition failed; original source data retained',
                            sample_id=sample.sample_id)
+        ontology_decisions, ontology_metrics = [], None
+        effective_sample = sample
+        if ontology_recognizer is not None:
+            try:
+                recognized, relations, ontology_decisions, ontology_metrics = ontology_recognizer.recognize(
+                    sample.model_copy(update={'content_units': list(units.values())}))
+                units = {u.unit_id: u for u in recognized}
+                effective_sample = sample.model_copy(update={'content_units': list(units.values()), 'relations': relations})
+            except Exception:
+                work.issue('ontology_recognition_failure', 'Ontology recognition failed; prior source data retained',
+                           sample_id=sample.sample_id)
         originals = {u.unit_id: u for u in sample.content_units}
         for unit in units.values():
-            work.ingest(sample, unit, originals[unit.unit_id])
+            work.ingest(effective_sample, unit, originals[unit.unit_id])
         for decision in decisions:
             uid = decision['unit_id']
             subject = work.subjects[(sample.sample_id, uid)]
@@ -311,7 +345,15 @@ def process(payload: Input | dict, *, interpreter=None, review_recognizer=None) 
         if metrics is not None:
             work.issue('review_recognition_summary', 'Review recognition coverage and model information',
                        sample_id=sample.sample_id, **metrics)
-        work.relations(sample)
+        for decision in ontology_decisions:
+            uid = decision['unit_id']
+            ref = identifier('evidence', sample.sample_id, uid)
+            work.issue('ontology_recognition_decision', 'Producer class or field evaluated against ontology',
+                       work.subjects[(sample.sample_id, uid)], [ref], source_url=sample.source_ref, **decision)
+        if ontology_metrics is not None:
+            work.issue('ontology_recognition_summary', 'Ontology recognition coverage and model information',
+                       sample_id=sample.sample_id, **ontology_metrics)
+        work.relations(effective_sample)
         if sample.coverage:
             work.issue('source_coverage', 'Source supplied coverage information', sample_id=sample.sample_id,
                        coverage=sample.coverage)

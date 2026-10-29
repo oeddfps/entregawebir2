@@ -199,3 +199,59 @@ limit are reported. If E5 fails, lexical recognition continues with explicit
 model_available=false; there is no silent successful-model claim. This is not a
 measured accuracy guarantee or a claim of complete review capture. Previously
 saved outputs are not changed automatically.
+
+## Ontology recognition (ontology-v1 / ontology 0.3)
+
+Recognition is performed only downstream of the producer. No scraper selectors,
+capture rules, navigation or network behavior are changed. The external input
+adapter retains producer class names as `Unit.locator.source_type_names`, unknown
+fields as raw_field, and original JSON blocks/locations as evidence. Top-level
+producer values are retained too. Core processing does not import the adapter.
+
+`vocabularies/ontology.v1.json` defines multilingual bags of words, definitions,
+positive examples and contrasting examples for the 12 diagram classes, 32
+properties and 11 relations. E5 embeds definitions, contextual alias lists and
+examples. Reference vectors are cached locally with a hash of their content and
+the pinned model revision. Review and ontology comparisons share the model and
+context budget. Similarity alone does not accept a classification or relation.
+
+Use `process(input, ontology_recognizer=OntologyRecognizer(E5Scorer()))` for the
+independent stage, or `OntologyRecognizer()` for deterministic recognition only.
+Supplying the existing ReviewRecognizer also enables ontology recognition, so the
+comparison worker integrates the new stage without changing the scraper or UI.
+The CLI accepts `--recognition e5` as an alias of `--review-recognition e5`.
+Classification requires explicit producer labels and compatible values/structure;
+relations require an existing target unit ID or unambiguous explicit target URL
+and compatible ontology endpoint types. No fuzzy product-name joins are made.
+Ambiguities, conflicts, character/token limits and omissions are emitted as
+ontology_recognition_decision / ontology_recognition_summary issues. Explicit
+existing incompatible classifications and fields are retained, not overwritten.
+
+### Offers and discounts
+
+`$100` is a monetary signal; `%20` and `20%` are percentage signals. A percentage
+requires an explicit discount label or a standalone commercial-offer block:
+product ingredient percentages are not discounts. `$` alone never becomes USD.
+Ambiguous amounts such as `$1.234` remain unresolved instead of guessing locale.
+Canonical source values stay in Evidence; normalized literals and their rules
+are recorded in assertions. A previous_price field becomes previous_amount,
+not another current amount. Price kinds/variant requirements remain separate.
+
+Offer projection fields include:
+- discount_status: discount / no_discount / unknown / conflict
+- discount_percent, discount_amount, previous_amount, currency_symbol
+
+Absence of discount evidence is unknown, not no_discount. Explicit declarations,
+zero/positive advertised savings and comparable current/previous prices can
+support the distinction. Price comparisons require one explicit currency in the
+same offer; conflicting percentages are reported. data.offers and presentation
+offers expose these fields even when there is insufficient evidence to answer
+the comparable-price-range question. No variant or seller is invented.
+
+The output ontology version is 0.3; readers accept saved 0.2 outputs. Exported
+schemas describe the extension. Contract envelope remains 1.0. The definition
+and algorithm of description_words_v1 keywords are unchanged.
+
+Test coverage is structural/regression validation, not measured accuracy on
+unseen websites. Semantic threshold calibration requires a labelled multi-domain
+corpus; candidates remain ambiguous until supported by explicit evidence.

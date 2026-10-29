@@ -22,6 +22,13 @@ def vocabulary():
     return json.loads(files('clean_process').joinpath('vocabularies/reviews.v1.json').read_text(encoding='utf-8'))
 
 
+@lru_cache(maxsize=1)
+def embedding_vocabulary():
+    ontology = json.loads(files('clean_process').joinpath('vocabularies/ontology.v1.json').read_text(encoding='utf-8'))
+    return {'concepts': {**vocabulary()['concepts'], **ontology['concepts']},
+            'negative_examples': vocabulary()['negative_examples'] + ontology['negative_examples']}
+
+
 def normalize(value):
     value = re.sub(r'([a-z])([A-Z])', r'\1 \2', str(value))
     value = unicodedata.normalize('NFKD', value.casefold())
@@ -51,6 +58,14 @@ class E5Scorer:
         self.last_scored = 0
 
     def rank(self, texts):
+        return [[item for item in ranking if not item[0].startswith(('entity.', 'property.', 'relation.'))][:3]
+                for ranking in self._rank_cached(texts)]
+
+    def rank_for(self, texts, prefix):
+        return [[item for item in ranking if item[0].startswith(prefix) or item[0] == 'other'][:3]
+                for ranking in self._rank_cached(texts)]
+
+    def _rank_cached(self, texts):
         # Cache repeated blocks across pages and bound local inference work.
         # Vocabulary/structural validation still examines every selected field.
         pending = list(dict.fromkeys(t for t in texts if t not in self.cache))
@@ -71,15 +86,22 @@ class E5Scorer:
                                             revision=REVISION, local_files_only=True, trust_remote_code=False)
             self.model.max_seq_length = 512
             anchors = []
-            for concept, item in vocabulary()['concepts'].items():
+            for concept, item in embedding_vocabulary()['concepts'].items():
                 for definition in item['definitions']:
                     anchors.append('query: ' + definition)
                     self.anchor_labels.append(concept)
-            for negative in vocabulary()['negative_examples']:
+                if item.get('terms'):
+                    anchors.append('query: ' + item['definitions'][0] + ' Etiquetas equivalentes: ' + ', '.join(item['terms']))
+                    self.anchor_labels.append(concept)
+                for example in item.get('examples', []):
+                    anchors.append('query: ' + example)
+                    self.anchor_labels.append(concept)
+            for negative in embedding_vocabulary()['negative_examples']:
                 anchors.append('query: ' + negative['text'])
                 self.anchor_labels.append(negative['concept'])
-            self.anchor_vectors = self.model.encode(anchors, normalize_embeddings=True,
-                                                     show_progress_bar=False, batch_size=16)
+            from .embedding_cache import reference_vectors
+            self.anchor_vectors, self.reference_cache_hit = reference_vectors(
+                self.model, anchors, MODEL, REVISION)
         prefixed = ['query: ' + text for text in texts]
         lengths = self.model.tokenizer(prefixed, truncation=False, verbose=False)['input_ids']
         self.last_truncated = sum(len(tokens) > 512 for tokens in lengths)
@@ -94,7 +116,7 @@ class E5Scorer:
                 if not math.isfinite(score):
                     raise ValueError('Invalid embedding score')
                 concepts[concept] = max(score, concepts.get(concept, -1.0))
-            rankings.append(sorted(concepts.items(), key=lambda item: -item[1])[:3])
+            rankings.append(sorted(concepts.items(), key=lambda item: -item[1]))
         return rankings
 
 
