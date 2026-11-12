@@ -7,7 +7,7 @@ const sections = {dashboard:'Análisis',extract:'Extraer',active:'Actividad',see
 const primaryNavigationSections = {dashboard:'Análisis',extract:'Extraer',active:'Actividad',activities:'Historial',settings:'Configuración'};
 const secondaryNavigationSections = {seeds:'Dominios y páginas',failures:'Fallidas',suspects:'Dominios marcados'};
 const navigationSections = {...primaryNavigationSections,...secondaryNavigationSections};
-const navigationIcons = {dashboard:'◉',extract:'↓',active:'≡',seeds:'◎',settings:'⚙',activities:'↗',failures:'!',suspects:'⚑'};
+const navigationIcons = {dashboard:'◉',extract:'↓',active:'≡',seeds:'◎',settings:'○',activities:'↗',failures:'!',suspects:'×'};
 const sectionMeta = {
   dashboard: 'Estado general del motor y actividad reciente.',
   extract: 'Analiza una URL y conserva sus datos estructurados y evidencias.',
@@ -26,8 +26,11 @@ async function api(path,body,method='POST') {
   const response=await fetch(path.startsWith('/api/')?path:'/api/service'+path,{cache:'no-store',...(body!==undefined?{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
   const text=await response.text();
   let data;
-  try{data=JSON.parse(text);}catch{throw new Error(response.ok?'El servidor devolvió una respuesta inválida.':`No se pudo completar la solicitud (HTTP ${response.status}).`);}
-  if(!response.ok) throw new Error(Array.isArray(data.detail)?data.detail.map(x=>x.msg).join(' · '):data.detail||'No se pudo conectar con el servicio.');
+  try{data=JSON.parse(text);}catch{throw new Error(response.ok?'El servicio devolvió una respuesta inválida.':'El servicio no está disponible en este momento. Inténtalo de nuevo en unos segundos.');}
+  if(!response.ok) {
+    if(response.status>=500) throw new Error('El servicio no está disponible en este momento. Inténtalo de nuevo en unos segundos.');
+    throw new Error(Array.isArray(data.detail)?data.detail.map(x=>x.msg).join(' · '):data.detail||'No se pudo conectar con el servicio.');
+  }
   return data;
 }
 function routeHref(changes,reset=false){const query=new URLSearchParams(!reset&&typeof window!=='undefined'?window.location.search:'');for(const [key,value] of Object.entries(changes)){if(value===null||value==='')query.delete(key);else query.set(key,String(value));}return '?'+query.toString();}
@@ -42,6 +45,25 @@ function useData(path,interval=0) {
 }
 function Status({value}) {return <span className={'status '+value}>{label(value)}</span>;}
 function Empty({children}) {return <div className="empty">{children}</div>;}
+function LoadFailure({onRetry}) {
+  return <section className="panel system-state" role="status">
+    <div className="system-state-mark" aria-hidden="true">!</div>
+    <div>
+      <h2>O centro de operações está indisponível</h2>
+      <p>Não foi possível carregar os dados agora. Verifique se o motor e o serviço estão ativos e tente novamente.</p>
+      <button className="primary" type="button" onClick={onRetry}>Tentar novamente</button>
+    </div>
+  </section>;
+}
+function LoadingState() {
+  return <section className="panel system-state system-state-loading" role="status" aria-live="polite">
+    <div className="loading-mark" aria-hidden="true"/>
+    <div>
+      <h2>Cargando el centro de operaciones</h2>
+      <p>Estamos comprobando el estado del motor y preparando tus datos.</p>
+    </div>
+  </section>;
+}
 function Pager({data,page,param='page'}) {
   return <div className="pager"><span>{data.total} resultados · 20 por página</span><RouteLink className="button-link" disabled={page<=1} href={routeHref({[param]:page-1})}>Anterior</RouteLink><span>{page} / {Math.max(1,Math.ceil(data.total/20))}</span><RouteLink className="button-link" disabled={page*20>=data.total} href={routeHref({[param]:page+1})}>Siguiente</RouteLink></div>;
 }
@@ -56,7 +78,8 @@ function ChartPopup({item,series}) {
 }
 function Chart({title,items,daily=false}) {
   const [active,setActive]=useState(null),max=Math.max(1,...items.map(x=>x.count));
-  return <section className="chart"><h3>{title}</h3><div className="chart-plot" onMouseLeave={()=>setActive(null)}><ChartPopup item={items[active]} series={[["count","Extraídas","#337f9b"]]}/><div className="bars">{items.map((item,i)=><div className="bar-column" key={item.label} tabIndex={0} aria-label={`${date(item.label)}: ${item.count} extracciones`} onMouseEnter={()=>setActive(i)} onFocus={()=>setActive(i)} onBlur={()=>setActive(null)} onKeyDown={e=>{if(e.key==='Escape')setActive(null);}}><span>{item.count||''}</span><div className="bar" style={{height:Math.max(2,item.count/max*100)+'px'}}/><small>{daily?new Date(item.label).toLocaleDateString('es-UY',{weekday:'short',timeZone:'America/Montevideo'}):i%3===0?new Date(item.label).getHours()+'h':''}</small></div>)}</div></div></section>;
+  const hasData=items.some(item=>item.count>0);
+  return <section className="chart"><h3>{title}</h3><div className="chart-plot" onMouseLeave={()=>setActive(null)}><ChartPopup item={items[active]} series={[["count","Extraídas","#337f9b"]]}/><div className="bars">{items.map((item,i)=><div className="bar-column" key={item.label} tabIndex={0} aria-label={`${date(item.label)}: ${item.count} extracciones`} onMouseEnter={()=>setActive(i)} onFocus={()=>setActive(i)} onBlur={()=>setActive(null)} onKeyDown={e=>{if(e.key==='Escape')setActive(null);}}><span>{item.count||''}</span><div className="bar" style={{height:Math.max(2,item.count/max*100)+'px'}}/><small>{daily?new Date(item.label).toLocaleDateString('es-UY',{weekday:'short',timeZone:'America/Montevideo'}):i%3===0?new Date(item.label).getHours()+'h':''}</small></div>)}</div></div>{!hasData&&<p className="chart-empty-note">Sin extracciones registradas en este período.</p>}</section>;
 }
 function HourlyChart({items}) {
   const [active,setActive]=useState(null);
@@ -85,7 +108,15 @@ function History({onOpen,failedOnly=false}) {
   const [page,setPage]=useUrlState('page',1),[status,setStatus]=useUrlState('status',failedOnly?'error':''),[retrying,setRetrying]=useState(''),[retryError,setRetryError]=useState('');
   async function retry(id){setRetrying(id);setRetryError('');try{const result=await api(`/activities/${id}/retry`,{});onOpen(result.activity_id);}catch(e){setRetryError(e.message);}finally{setRetrying('');}}
   const [data,error]=useData(`/activities?page=${page}&status=${status}`,2000);
-  return <section className="panel"><div className="section-heading"><h2>{failedOnly?'Actividades fallidas':'Todas las actividades'}</h2>{!failedOnly&&<label>Estado<select value={status} onChange={e=>goTo(routeHref({status:e.target.value,page:1}))}><option value="">Todos</option>{['queued','running','paused','retry_wait','done','error','excluded'].map(s=><option key={s} value={s}>{label(s)}</option>)}</select></label>}</div>{error&&<p role="alert">{error}</p>}{data&&<div className="page-transition" key={data.page}><ActivityTable items={data.items} onOpen={onOpen} onRetry={retry} retrying={retrying}/>{retryError&&<p className="error-banner" role="alert">{retryError}</p>}<Pager data={data} page={page} setPage={setPage}/></div>}</section>;
+  return <><ScrapeHistory failedOnly={failedOnly}/><section className="panel"><div className="section-heading"><h2>{failedOnly?'Actividades fallidas':'Todas las actividades'}</h2>{!failedOnly&&<label>Estado<select value={status} onChange={e=>goTo(routeHref({status:e.target.value,page:1}))}><option value="">Todos</option>{['queued','running','paused','retry_wait','done','error','excluded'].map(s=><option key={s} value={s}>{label(s)}</option>)}</select></label>}</div>{error&&<p role="alert">{error}</p>}{data&&<div className="page-transition" key={data.page}><ActivityTable items={data.items} onOpen={onOpen} onRetry={retry} retrying={retrying}/>{retryError&&<p className="error-banner" role="alert">{retryError}</p>}<Pager data={data} page={page} setPage={setPage}/></div>}</section></>;
+}
+function ScrapeHistory({failedOnly=false}) {
+  const [runs,error]=useData('/api/scrapes');
+  const visible=runs?.filter(run=>{
+    const failed=(run.summary?.failed||0)>0;
+    return !failedOnly||failed;
+  })||[];
+  return <section className="panel scrape-history"><div className="section-heading"><div><h2>{failedOnly?'Capturas directas con errores':'Capturas directas'}</h2><p>Resultados de URLs enviadas desde Extraer.</p></div><span>{visible.length} registros</span></div>{error&&<p className="error-banner" role="alert">{error}</p>}{runs&&<>{visible.length?<table><thead><tr><th>URL solicitada</th><th>Estado</th><th>Inicio</th><th/></tr></thead><tbody>{visible.map(run=>{const failed=(run.summary?.failed||0)>0;const status=run.finished_at?(failed?'error':'done'):'running';const url=run.config?.initial_uris?.[0]||'URL no disponible';return <tr key={run.id}><td className="url"><strong>{url}</strong><small>{run.summary?`${run.summary.succeeded||0} finalizadas · ${run.summary.failed||0} con error`:'Procesando captura'}</small></td><td><Status value={status}/></td><td className="nowrap">{date(run.started_at)}</td><td><RouteLink className="button-link" href={routeHref({view:'extract',extract_run:run.id},true)}>Abrir resultado</RouteLink></td></tr>;})}</tbody></table>:<Empty>No hay capturas directas registradas.</Empty>}</>}</section>;
 }
 function SettingsForm({initial,onSaved}) {
   const [form,setForm]=useState(initial),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
@@ -319,13 +350,15 @@ function Activity({id,onOpen}) {
 
 }
 export default function ControlRoom() {
-  const [section,setSection]=useState('dashboard'),[activity,setActivity]=useState(''),[message,setMessage]=useState(''),[mobileMoreOpen,setMobileMoreOpen]=useState(false);
+  const [section,setSection]=useState('dashboard'),[activity,setActivity]=useState(''),[message,setMessage]=useState(''),[mobileMoreOpen,setMobileMoreOpen]=useState(false),[recovering,setRecovering]=useState(false),[recoveryAttempted,setRecoveryAttempted]=useState(false);
   const [data,error,reload]=useData('/dashboard',2000);
   useEffect(()=>{function sync(){const q=new URLSearchParams(location.search);setActivity(q.get('activity')||'');setSection(q.get('view')||'dashboard');}sync();window.addEventListener('popstate',sync);return()=>window.removeEventListener('popstate',sync);},[]);
+  useEffect(()=>{if(!data||data.daemon.online||recoveryAttempted)return;setRecoveryAttempted(true);recoverEngine();},[data?.daemon.online,recoveryAttempted]);
   function navigate(view){goTo(routeHref({view},true));}
   function open(id){if(id)goTo(routeHref({activity:id},true));}
+  async function recoverEngine(){setRecovering(true);setMessage('');try{await api('/engine/restart',{},'POST');setTimeout(reload,700);}catch(e){setMessage(e.message);}finally{setRecovering(false);}}
   async function toggle(){try{await api('/settings',{...data.settings,enabled:!data.settings.enabled},'PUT');reload();setMessage('');}catch(e){setMessage(e.message);}}
   const currentTitle=activity?'Historial':sections[section]||'Análisis';
   const currentDescription=activity?'Detalle completo de una actividad, su resultado y su trazabilidad.':sectionMeta[section]||sectionMeta.dashboard;
-  return <><div className="shell"><aside className="sidebar"><a className="brand" href="/compare/" aria-label="Volver a Clean&Process" title="Volver a Clean&Process"><span className="brand-return-arrow" aria-hidden="true"><img src="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/icons/arrow-left.svg" alt="" /></span><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M5 5H25V12H12V25H5Z" fill="currentColor"/><path d="M17 17H25V25H17Z" fill="#1d5fbf"/></svg><div><strong>Clean&Process</strong><small>Scrapper · extracción web</small></div></a><nav>{Object.entries(navigationSections).map(([key,title])=><RouteLink className={!activity&&section===key?'active':''} key={key} href={'?view='+key}><span className="nav-icon" aria-hidden="true">{navigationIcons[key]}</span><span className="nav-label">{title}</span></RouteLink>)}<button type="button" className="mobile-more-trigger" aria-expanded={mobileMoreOpen} onClick={()=>setMobileMoreOpen(value=>!value)}><span className="nav-icon" aria-hidden="true">⋯</span><span className="nav-label">Más</span></button>{mobileMoreOpen&&<div className="mobile-more-menu">{Object.entries(secondaryNavigationSections).map(([key,title])=><a key={key} href={'?view='+key} onClick={event=>{event.preventDefault();setMobileMoreOpen(false);goTo(routeHref({view:key},true));}}><span className="nav-icon" aria-hidden="true">{navigationIcons[key]}</span>{title}</a>)}</div>}</nav><div className="sidebar-bottom"><span className={'dot '+(data?.daemon.online?'online':'')}/>{data?.daemon.online?'Motor conectado':'Motor sin conexión'}</div></aside><main><header className="topbar"><a className="mobile-back-link" href="/compare/" aria-label="Volver a Clean&Process"><img src="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/icons/arrow-left.svg" alt="" /><span>Clean&Process</span></a><div className="topbar-context"><span>{currentTitle}</span><small>{currentDescription}</small></div><div className="topbar-actions inline">{data&&data.daemon.online&&<><Status value={data.settings.enabled?'running':'paused'}/><button className={data.settings.enabled?'':'primary'} onClick={toggle}>{data.settings.enabled?'Pausar scraping':'Activar scraping'}</button></>}</div></header><div className="workspace">{(error||message)&&<p className="error-banner" role="alert">{error||message}</p>}{data?.daemon.error&&<p className="error-banner">{data.daemon.error}</p>}{data&&!data.daemon.online&&<div className="engine-offline-banner" role="alert"><p>El motor no está conectado. Puedes guardar configuración; las tareas se ejecutarán cuando vuelva a estar disponible.</p><button className="primary" onClick={toggle}>{data.settings.enabled?'Pausar scraping':'Activar scraping'}</button></div>}<div className="section-transition" key={activity||section}>{activity?<Activity key={activity} id={activity} onOpen={open}/>:<><div className="page-heading"><h1>{currentTitle}</h1><p>{currentDescription}</p></div>{data&&section==='dashboard'&&<Monitor data={data}/>} {section==='extract'&&<Extract/>} {section==='active'&&<LiveActivities onOpen={open}/>} {section==='activities'&&<History onOpen={open}/>} {section==='failures'&&<History onOpen={open} failedOnly/>} {section==='seeds'&&<Seeds onOpen={open}/>} {section==='settings'&&data&&<SettingsForm initial={data.settings} onSaved={reload}/>} {section==='domains'&&<Domains onOpen={open}/>} {section==='suspects'&&<Domains onOpen={open} suspects/>}</>}</div></div></main></div></>;
+  return <><div className="shell"><aside className="sidebar"><a className="brand" href="/compare/" aria-label="Volver a Clean&Process" title="Volver a Clean&Process"><span className="brand-return-arrow" aria-hidden="true"><img src="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/icons/arrow-left.svg" alt="" /></span><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M5 5H25V12H12V25H5Z" fill="currentColor"/><path d="M17 17H25V25H17Z" fill="#1d5fbf"/></svg><div><strong>Clean&Process</strong><small>Scrapper · extracción web</small></div></a>  <nav aria-label="Navegação principal">{Object.entries(navigationSections).map(([key,title])=><RouteLink className={!activity&&section===key?'active':''} key={key} href={'?view='+key}><span className="nav-icon" aria-hidden="true">{navigationIcons[key]}</span><span className="nav-label">{title}</span></RouteLink>)}<button type="button" className="mobile-more-trigger" aria-expanded={mobileMoreOpen} onClick={()=>setMobileMoreOpen(value=>!value)}>  <span className="nav-icon" aria-hidden="true">...</span><span className="nav-label">Más</span></button>{mobileMoreOpen&&<div className="mobile-more-menu">{Object.entries(secondaryNavigationSections).map(([key,title])=><a key={key} href={'?view='+key} onClick={event=>{event.preventDefault();setMobileMoreOpen(false);goTo(routeHref({view:key},true));}}><span className="nav-icon" aria-hidden="true">{navigationIcons[key]}</span>{title}</a>)}</div>}</nav>  <div className="sidebar-bottom"><span className={'dot '+(data?.daemon.online?'online':'')}/>{data?.daemon.online?'Motor conectado':recovering?'Conectando motor…':'Motor sin conexión'}</div></aside><main><header className="topbar"><a className="mobile-back-link" href="/compare/" aria-label="Volver a Clean&Process"><img src="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/icons/arrow-left.svg" alt="" /><span>Clean&Process</span></a><div className="topbar-context"><span>{currentTitle}</span><small>{currentDescription}</small></div><div className="topbar-actions inline">{data&&data.daemon.online&&<><Status value={data.settings.enabled?'running':'paused'}/><button className={data.settings.enabled?'':'primary'} onClick={toggle}>{data.settings.enabled?'Pausar scraping':'Activar scraping'}</button></>}</div></header>    <div className="workspace">{message&&<p className="error-banner" role="alert">{message}</p>}{data?.daemon.error&&!recovering&&<p className="error-banner">{data.daemon.error}</p>}{data&&!data.daemon.online&&!recovering&&!message&&<div className="engine-offline-banner" role="alert"><p>No se pudo conectar el motor automáticamente.</p><button className="primary" onClick={recoverEngine} disabled={recovering}>{recovering?'Reiniciando motor…':'Reiniciar motor'}</button></div>}{data&&!data.daemon.online&&!recovering&&message&&<div className="engine-offline-banner" role="alert"><p>El motor sigue sin responder. Puedes intentar una recuperación profunda.</p><button className="primary" onClick={recoverEngine} disabled={recovering}>Reiniciar motor</button></div>}<div className="section-transition" key={activity||section}>{activity?<Activity key={activity} id={activity} onOpen={open}/>:<><div className="page-heading"><h1>{currentTitle}</h1><p>{currentDescription}</p></div>    {!data&&!error&&section!=='extract'&&<LoadingState/>} {error&&!data&&section!=='extract'&&<LoadFailure onRetry={reload}/>} {data&&section==='dashboard'&&<Monitor data={data}/>} {section==='extract'&&<Extract/>} {section==='active'&&<LiveActivities onOpen={open}/>} {section==='activities'&&<History onOpen={open}/>} {section==='failures'&&<History onOpen={open} failedOnly/>} {section==='seeds'&&<Seeds onOpen={open}/>} {section==='settings'&&data&&<SettingsForm initial={data.settings} onSaved={reload}/>} {section==='domains'&&<Domains onOpen={open}/>} {section==='suspects'&&<Domains onOpen={open} suspects/>}</>}</div></div></main></div></>;
 }

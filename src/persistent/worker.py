@@ -1,6 +1,5 @@
 """One supervised process per logical worker; Playwright remains thread-local."""
 import argparse
-import fcntl
 import json
 import logging
 import os
@@ -18,6 +17,12 @@ from ..common.scrapper import AuditStore, SemanticMetadataStrategy
 from ..common.scrapper.runtime import PageExecutor
 from ..common.scrapper.models import RunSummary
 from ..common.scrapper.orchestrator import canonical_uri
+
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+    import msvcrt
 
 UNIT = os.environ.get('SCRAPPER_WORKER_UNIT','scrapper-worker.service')
 LOG = logging.getLogger(__name__)
@@ -100,11 +105,18 @@ class ResourceLimits:
         self.applied = None
         self.error = None
         self.previous_cpu = None
+        if os.name == 'nt':
+            self.cgroup = None
+            return
         relative = next((s.split('::',1)[1].strip() for s in Path('/proc/self/cgroup').read_text().splitlines() if s.startswith('0::')),None)
         self.cgroup = Path('/sys/fs/cgroup') / relative.lstrip('/') if relative else None
 
     def apply(self, settings):
         wanted = (settings['cpu_percent'],settings['memory_mb'])
+        if self.cgroup is None:
+            self.applied = wanted
+            self.error = None
+            return True
         if self.applied == wanted:
             return True
         if not self.cgroup or self.cgroup.name != UNIT:
@@ -120,6 +132,8 @@ class ResourceLimits:
         return True
 
     def memory_mb(self):
+        if self.cgroup is None:
+            return 0
         return int((self.cgroup/'memory.current').read_text())/1024**2
 
     def usage(self):
@@ -157,6 +171,8 @@ def can_start_worker(settings, running, memory_mb):
 
 
 def process_snapshot():
+    if os.name == 'nt':
+        return {}
     result = {}
     for path in Path('/proc').glob('[0-9]*/stat'):
         try:
@@ -191,7 +207,11 @@ def interrupt_over_limit(store, process, activity_id, memory_mb, threshold, memb
     reason = f'La actividad superó su umbral de memoria: {memory_mb:.0f} MB > {threshold} MB.'
     for pid in members:
         try:
-            os.kill(pid,signal.SIGKILL)
+            if os.name == 'nt':
+                subprocess.run(['taskkill','/PID',str(pid),'/T','/F'],check=False,
+                               stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            else:
+                os.kill(pid,signal.SIGKILL)
         except ProcessLookupError:
             pass
     process.wait(timeout=10)
@@ -202,7 +222,13 @@ def interrupt_over_limit(store, process, activity_id, memory_mb, threshold, memb
 
 def daemon(store):
     lock = open(store.root/'daemon.lock','w')
-    fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+    if fcntl:
+        fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+    else:
+        lock.write('\0')
+        lock.flush()
+        lock.seek(0)
+        msvcrt.locking(lock.fileno(),msvcrt.LK_NBLCK,1)
     recover_audit(store)
     store.recover()
     limits = ResourceLimits()
@@ -220,7 +246,8 @@ def daemon(store):
     def drain(*_):
         nonlocal draining
         draining = True
-    signal.signal(signal.SIGUSR1,drain)
+    if hasattr(signal,'SIGUSR1'):
+        signal.signal(signal.SIGUSR1,drain)
     signal.signal(signal.SIGTERM,stop)
     signal.signal(signal.SIGINT,stop)
     try:
@@ -314,7 +341,10 @@ def daemon(store):
     finally:
         for process,activity_id,_ in running.values():
             try:
-                os.killpg(process.pid,signal.SIGKILL)
+                if os.name == 'nt':
+                    process.kill()
+                else:
+                    os.killpg(process.pid,signal.SIGKILL)
             except ProcessLookupError:
                 pass
             process.wait()

@@ -8,8 +8,8 @@ from contextlib import contextmanager
 from difflib import SequenceMatcher
 from pathlib import Path
 from urllib.parse import urlsplit
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from .rules import DomainRule, RegexRule
@@ -593,7 +593,10 @@ class Store:
             for worker in workers:
                 worker['progress'] = self._progress(db,worker)
             researched = db.execute('SELECT count(DISTINCT p.domain) FROM activities a JOIN pages p ON p.id=a.page_id WHERE a.started IS NOT NULL').fetchone()[0]
-            tz = ZoneInfo('America/Montevideo')
+            try:
+                tz = ZoneInfo('America/Montevideo')
+            except ZoneInfoNotFoundError:
+                tz = timezone(timedelta(hours=-3))
             now = datetime.now(tz)
             hour = now.replace(minute=0,second=0,microsecond=0)
             monday = now.replace(hour=0,minute=0,second=0,microsecond=0)-timedelta(days=now.weekday())

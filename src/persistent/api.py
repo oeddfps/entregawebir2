@@ -6,6 +6,7 @@ from typing import Literal
 import json
 import subprocess
 import sys
+from pathlib import Path
 from ..common.scrapper.orchestrator import canonical_uri
 from ..common.scrapper import AuditStore
 
@@ -165,6 +166,22 @@ def router(store=None,audit=None):
     @api.get('/activities')
     def activities(page: int=Query(1,ge=1),status: str='',domain: str=''):
         return store.activities(page,status,domain)
+
+    @api.post('/engine/restart')
+    def restart_engine():
+        root = Path(__file__).resolve().parents[2]
+        try:
+            subprocess.Popen(
+                [sys.executable, '-m', 'src.persistent.worker'],
+                cwd=root,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError as exc:
+            raise HTTPException(503, f'No se pudo iniciar el motor: {exc}') from exc
+        return {'started': True, 'message': 'Reinicio del motor solicitado.'}
 
     @api.get('/activities/{activity_id}')
     def activity(activity_id: str):

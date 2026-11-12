@@ -6,8 +6,23 @@ from collections import Counter
 import hashlib
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 from .dom import clean_document, group_values, _entry
+
+def _configure_playwright_path():
+    if os.environ.get('PLAYWRIGHT_BROWSERS_PATH') or os.name != 'nt':
+        return
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Environment') as key:
+            configured = winreg.QueryValueEx(key, 'PLAYWRIGHT_BROWSERS_PATH')[0]
+        if configured and Path(configured).exists():
+            os.environ['PLAYWRIGHT_BROWSERS_PATH'] = configured
+    except (OSError, ImportError):
+        pass
+
+_configure_playwright_path()
 
 class NonPageResponse(RuntimeError):
     retryable = False
