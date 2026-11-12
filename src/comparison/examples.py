@@ -23,7 +23,9 @@ def examples():
                 if datum['property'] == 'amount':
                     datum['value'] = str(float(datum['value']) + index * 3)
             if unit['unit_id'] == 'product':
-                unit['fields'].extend([{'property': 'description', 'value': ['Hidratación diaria con una textura cremosa.', 'Una fórmula ligera para una rutina sencilla.'][index]},
+                unit['fields'].extend([{'property': 'brand', 'value': 'Marca Clara'},
+                    {'property': 'gtin', 'value': '789100000001'},
+                    {'property': 'description', 'value': ['Hidratación diaria con una textura cremosa.', 'Una fórmula ligera para una rutina sencilla.'][index]},
                     {'property': 'rating', 'value': ['4.2', '4.6'][index]},
                     {'property': 'rating_scale', 'value': {'min': 0, 'max': 5}},
                     {'property': 'rating_count', 'value': ['84', '126'][index]},

@@ -2,6 +2,7 @@
 
 import {useEffect, useRef, useState} from 'react';
 import ComparisonCharts from './comparison-charts';
+import BrandCompetitiveness from './brand-competitiveness';
 import StageTimer from './stage-timer';
 import CompletionNotification, {enableCompletionSound,useCompletionNotification} from './completion-notification';
 import ProcessingSettings, {settingsSummary} from './processing-settings';
@@ -18,7 +19,7 @@ import {
 const END = new Set(['done','partial','failed','cancelled','interrupted']);
 const STATUS = {ambiguous:'Ambiguo',conflict:'En conflicto',queued:'En espera',running:'En curso',capturing:'Capturando',captured:'Capturada',processing:'Procesando',done:'Finalizada',partial:'Parcial',failed:'No disponible',cancelled:'Cancelada',interrupted:'Interrumpida',answered:'Con información',not_answerable:'Sin información suficiente',not_required:'Importada',skipped:'Omitida',cancelling:'Deteniendo'};
 const TOPICS = {hydration:'Hidratación',absorption:'Absorción',texture:'Textura',irritation:'Irritación',packaging:'Envase',price:'Precio',performance:'Desempeño',favorable:'Favorable',unfavorable:'Desfavorable',mixed:'Mixta',neutral:'Neutral',indeterminate:'Indeterminada',brand:'Marca',seller:'Vendedor',consumer:'Consumidores',unknown:'Autoría desconocida',identification:'Identificación',application:'Aplicación',visible:'Visible',hidden:'Oculta',card:'Tarjeta',other:'Otro'};
-const TABS = [['overview','Resumen'],['price_range','Precios'],['visual_presentation','Imágenes'],['keywords','Términos'],['category_opinions','Opiniones']];
+const TABS = [['overview','Resumen'],['brands','Marcas'],['price_range','Precios'],['visual_presentation','Imágenes'],['keywords','Términos'],['category_opinions','Opiniones']];
 const fmt = v => typeof v === 'number' && Number.isFinite(v) ? new Intl.NumberFormat('es-UY',{maximumFractionDigits:2}).format(v) : v == null ? '—' : String(v);
 const text = v => typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v);
 const label = v => TOPICS[v] || STATUS[v] || text(v);
@@ -130,6 +131,7 @@ export default function Comparison() {
     <div className="cp-tabs-row"><div className="cp-tabs" role="tablist" aria-label="Secciones de resultados">{TABS.map(([key,title])=><button role="tab" aria-selected={tab===key} aria-controls="cp-tab-panel" id={'cp-tab-'+key} className={tab===key?'active':''} key={key} tabIndex={tab===key?0:-1} onKeyDown={event=>navigateTab(event,key)} onClick={()=>setTab(key)}>{title}</button>)}</div><label className="cp-search"><Icon name="search" size={16}/><input aria-label="Buscar productos" placeholder="Buscar producto…" value={search} onChange={e=>setSearch(e.target.value)}/></label></div>
     <div id="cp-tab-panel" role="tabpanel" aria-labelledby={'cp-tab-'+tab}>
     {tab==='overview'&&<><CoverageMatrix results={results} names={displayNames} onOpen={setTab}/><GraphResults results={results} names={displayNames}/><ComparisonCharts results={results} names={displayNames}/><div className="cp-chart-grid"><Card title="Puntuaciones con escala conocida" note="Solo se comparan puntuaciones con los mismos límites declarados." action={ratingScales.length>1?<select aria-label="Escala de puntuaciones" value={selectedScale} onChange={e=>setRatingScale(e.target.value)}>{ratingScales.map(([key,title])=><option key={key} value={key}>{title}</option>)}</select>:null}><Bars rows={ratingRows} maxValue={1} onEvidence={showEvidence} empty="Las puntuaciones sin escala conocida se muestran en las fichas; no se normalizan."/></Card><Card title="Valoraciones y reseñas publicadas" note="Cantidades declaradas por producto. No equivalen a textos analizados."><Bars rows={countRows} onEvidence={showEvidence}/></Card></div><Products results={results} names={displayNames} search={search} onOpen={(index,p)=>setSelected({index,product:p})}/></>}
+    {tab==='brands'&&<BrandCompetitiveness results={results} sources={job?.sources||displayNames.map(label=>({label}))} search={search} onOpen={(index,p)=>setSelected({index,product:p})} onEvidence={showEvidence}/>}
     {tab==='price_range'&&<PriceRangeResults results={results} names={displayNames} onEvidence={showEvidence}/>}
     {tab==='visual_presentation'&&<VisualPresentationResults results={results} names={displayNames} onEvidence={showEvidence}/>}
     {tab==='keywords'&&<><WordCloudResults results={results} names={displayNames}/><KeywordsResults results={results} names={displayNames} onEvidence={showEvidence}/></>}
