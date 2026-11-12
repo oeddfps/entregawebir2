@@ -4,6 +4,20 @@ import {Children, memo, useEffect, useRef, useState} from 'react';
 
 const names = {completed_with_errors:'Sin pendientes · con errores',idle:'idle',queued:'En cola',running:'En curso',paused:'Pausada',retry_wait:'Espera de reintento',done:'Finalizada',error:'Error',excluded:'Excluida',starting:'Preparando navegador',loading:'Cargando página',capture:'Guardando captura',extracting:'Extrayendo contenido',saving:'Guardando resultados',interaction:'Expandiendo contenido'};
 const sections = {dashboard:'Análisis',extract:'Extraer',active:'Actividad',seeds:'Dominios y páginas',settings:'Configuración',activities:'Historial',failures:'Fallidas',suspects:'Dominios marcados'};
+const primaryNavigationSections = {dashboard:'Análisis',extract:'Extraer',active:'Actividad',activities:'Historial',settings:'Configuración'};
+const secondaryNavigationSections = {seeds:'Dominios y páginas',failures:'Fallidas',suspects:'Dominios marcados'};
+const navigationSections = {...primaryNavigationSections,...secondaryNavigationSections};
+const navigationIcons = {dashboard:'◉',extract:'↓',active:'≡',seeds:'◎',settings:'⚙',activities:'↗',failures:'!',suspects:'⚑'};
+const sectionMeta = {
+  dashboard: 'Estado general del motor y actividad reciente.',
+  extract: 'Analiza una URL y conserva sus datos estructurados y evidencias.',
+  active: 'Supervisa los slots y tareas que están ejecutándose ahora.',
+  seeds: 'Administra dominios de entrada y sus páginas descubiertas.',
+  settings: 'Define límites, recursos y comportamiento del motor.',
+  activities: 'Consulta todas las extracciones y sus estados.',
+  failures: 'Revisa errores y relanza actividades cuando sea necesario.',
+  suspects: 'Revisa dominios pausados por comportamiento sospechoso.',
+};
 const emptySeed = {url:'',enabled:true,max_urls_per_minute:null,max_pages:null,rule_mode:'black',allowed_domains:[],blocked_domains:[],allowed_url_patterns:[],blocked_url_patterns:[]};
 const ruleNames = {allowed_domains:'Dominios permitidos',blocked_domains:'Dominios bloqueados',allowed_url_patterns:'Regex permitidas',blocked_url_patterns:'Regex bloqueadas'};
 const date = value => value ? new Date(typeof value==='number'?value*1000:value).toLocaleString('es-UY') : '—';
@@ -60,11 +74,12 @@ function Monitor({data}) {
     <div className="resource-strip"><strong>Recursos del motor</strong><span>Memoria: {data.daemon.resources?.memory_mb??'—'} / {data.settings.memory_mb} MB</span><span>CPU máxima: {data.settings.cpu_percent}% <small>(100% = 1 núcleo)</small></span></div></>;
 }
 function SlotTable({slots,onOpen}) {
-  return <table className="slot-table"><thead><tr><th>Slot</th><th>Estado</th><th>Página</th><th>Tarea actual</th><th>Actividad</th></tr></thead><tbody>{[...slots].sort((a,b)=>Number(!!b.activity)-Number(!!a.activity)||a.slot-b.slot).map(({slot,status,activity:a})=><tr key={slot} className={a?'':'idle-slot'}><td><strong>#{String(slot).padStart(2,'0')}</strong></td><td><Status value={status}/></td><td className="url">{a?<RouteLink className="text-link" href={routeHref({activity:a.id},true)}>{a.url}</RouteLink>:<span>Sin actividad asignada</span>}</td><td>{a?<><TaskProgress activity={a}/></>:'—'}</td><td>{a?<RouteLink className="button-link" href={routeHref({activity:a.id},true)}>Ver actividad</RouteLink>:'—'}</td></tr>)}</tbody></table>;
+  const rows=[...slots].sort((a,b)=>Number(!!b.activity)-Number(!!a.activity)||a.slot-b.slot);
+  return <><table className="slot-table desktop-slot-table"><thead><tr><th>Slot</th><th>Estado</th><th>Página</th><th>Tarea actual</th><th>Actividad</th></tr></thead><tbody>{rows.map(({slot,status,activity:a})=><tr key={slot} className={a?'':'idle-slot'}><td><strong>#{String(slot).padStart(2,'0')}</strong></td><td><Status value={status}/></td><td className="url">{a?<RouteLink className="text-link" href={routeHref({activity:a.id},true)}>{a.url}</RouteLink>:<span>Sin actividad asignada</span>}</td><td>{a?<><TaskProgress activity={a}/></>:'—'}</td><td>{a?<RouteLink className="button-link" href={routeHref({activity:a.id},true)}>Ver actividad</RouteLink>:'—'}</td></tr>)}</tbody></table><div className="mobile-slot-list" aria-label="Actividad por slot">{rows.map(({slot,status,activity:a})=><article className={'mobile-slot-card '+(a?'has-activity':'idle-slot')} key={slot}><header><strong>#{String(slot).padStart(2,'0')}</strong><Status value={status}/></header>{a?<><RouteLink className="mobile-slot-url text-link" href={routeHref({activity:a.id},true)}>{a.url}</RouteLink><TaskProgress activity={a}/><RouteLink className="button-link" href={routeHref({activity:a.id},true)}>Ver actividad</RouteLink></>:<p>Sin actividad asignada</p>}</article>)}</div></>;
 }
 function LiveActivities({onOpen}) {
   const [data,error]=useData('/dashboard',2000);
-  return <>{data&&<div className="overview activity-counters">{[["pages_per_hour","Páginas por hora"],["queued","Encoladas"],["running","En curso"],["errors_per_hour","Errores por hora"]].map(([key,title])=><div key={key}><span>{title}</span><strong>{data.activity_counters?.[key]??0}</strong></div>)}<div><span>RAM</span><strong>{data.daemon.resources?.memory_mb==null?'—':Math.round(data.daemon.resources.memory_mb).toLocaleString('es-UY')}<em> / {data.settings.memory_mb.toLocaleString('es-UY')} MB</em></strong></div><div><span title="100 % equivale a un núcleo">CPU</span><strong>{data.daemon.resources?.cpu_used_percent==null?'—':Math.round(data.daemon.resources.cpu_used_percent).toLocaleString('es-UY')}<em> / {data.settings.cpu_percent.toLocaleString('es-UY')} %</em></strong></div></div>}<section className="panel"><div className="section-heading"><div><h2>Actividad por slot</h2></div>{data&&<span>{data.slots.filter(s=>s.activity).length} ocupados / {data.slots.length} slots</span>}</div>{error&&<p role="alert">{error}</p>}{data&&<SlotTable slots={data.slots} onOpen={onOpen}/>}</section></>;
+  return <>{data&&<div className="overview activity-counters">{[["pages_per_hour","Páginas/h"],["queued","En cola"],["running","En curso"],["errors_per_hour","Errores/h"]].map(([key,title])=><div className="activity-kpi" key={key}><span>{title}</span><strong>{data.activity_counters?.[key]??0}</strong></div>)}<div className="activity-kpi resource-kpi"><span>RAM</span><strong>{data.daemon.resources?.memory_mb==null?'—':Math.round(data.daemon.resources.memory_mb).toLocaleString('es-UY')}<em> / {data.settings.memory_mb.toLocaleString('es-UY')} MB</em></strong></div><div className="activity-kpi resource-kpi"><span title="100 % equivale a un núcleo">CPU</span><strong>{data.daemon.resources?.cpu_used_percent==null?'—':Math.round(data.daemon.resources.cpu_used_percent).toLocaleString('es-UY')}<em> / {data.settings.cpu_percent.toLocaleString('es-UY')} %</em></strong></div></div>}<section className="panel"><div className="section-heading"><div><h2>Actividad por slot</h2></div>{data&&<span>{data.slots.filter(s=>s.activity).length} ocupados / {data.slots.length} slots</span>}</div>{error&&<p role="alert">{error}</p>}{data&&<SlotTable slots={data.slots} onOpen={onOpen}/>}</section></>;
 }
 function History({onOpen,failedOnly=false}) {
   const [page,setPage]=useUrlState('page',1),[status,setStatus]=useUrlState('status',failedOnly?'error':''),[retrying,setRetrying]=useState(''),[retryError,setRetryError]=useState('');
@@ -260,17 +275,28 @@ function Extract() {
     }catch(e){setState({status:'error',error:e.message,visit:null});}
     finally{setSubmitting(false);}
   }
-  return <>
-    <form className="panel form-panel" onSubmit={start}>
-      <p>Analiza una página y extrae su contenido, metadatos y datos estructurados. Solo se visita la URL indicada, sin seguir enlaces ni ampliar listados.</p>
-      <label>URL de la página<input type="url" required maxLength={2048} placeholder="https://ejemplo.com/pagina" value={url} onChange={e=>setUrl(e.target.value)}/></label>
-      <div><button className="primary" disabled={busy}>{busy?'Extrayendo…':'Extraer página'}</button></div>
-      {busy&&<p role="status">Analizando la página. Los resultados aparecerán aquí.</p>}
+  return <div className="extract-workspace">
+    <form className="panel form-panel extract-panel" onSubmit={start}>
+      <div className="extract-panel-heading">
+        <div>
+          <h2>Extraer contenido de una página</h2>
+          <p id="extract-help">Obtén contenido, metadatos y datos estructurados de una URL, conservando la evidencia recibida.</p>
+        </div>
+        <span className="extract-scope">Una URL por captura</span>
+      </div>
+      <div className="extract-form-row">
+        <label htmlFor="extract-url">URL de la página
+          <input id="extract-url" type="url" required maxLength={2048} aria-describedby="extract-help" placeholder="https://ejemplo.com/pagina" value={url} onChange={e=>setUrl(e.target.value)}/>
+        </label>
+        <button className="primary extract-submit" disabled={busy}>{busy?'Extrayendo…':'Extraer página'}</button>
+      </div>
+      <p className="extract-note">Solo se visita la URL indicada. No se siguen enlaces ni se amplían listados.</p>
+      {busy&&<p className="extract-status" role="status">Analizando la página. Los resultados aparecerán aquí.</p>}
       {state.error&&<p className="error-banner" role="alert">{state.error}</p>}
-      {state.status==='done'&&!state.error&&<p role="status">Extracción finalizada.</p>}
+      {state.status==='done'&&!state.error&&<p className="extract-status success" role="status">Extracción finalizada.</p>}
     </form>
-    {state.visit&&<section className="panel activity-content"><Results visits={[state.visit]} sourceUrl={state.visit.final_uri||state.visit.requested_uri}/></section>}
-  </>;
+    {state.visit&&<section className="panel activity-content extract-results"><Results visits={[state.visit]} sourceUrl={state.visit.final_uri||state.visit.requested_uri}/></section>}
+  </div>;
 }
 function RequestedScrape({id}) {
   const [data,error]=useData('/activities/'+id,2000);
@@ -293,11 +319,13 @@ function Activity({id,onOpen}) {
 
 }
 export default function ControlRoom() {
-  const [section,setSection]=useState('dashboard'),[activity,setActivity]=useState(''),[message,setMessage]=useState('');
+  const [section,setSection]=useState('dashboard'),[activity,setActivity]=useState(''),[message,setMessage]=useState(''),[mobileMoreOpen,setMobileMoreOpen]=useState(false);
   const [data,error,reload]=useData('/dashboard',2000);
   useEffect(()=>{function sync(){const q=new URLSearchParams(location.search);setActivity(q.get('activity')||'');setSection(q.get('view')||'dashboard');}sync();window.addEventListener('popstate',sync);return()=>window.removeEventListener('popstate',sync);},[]);
   function navigate(view){goTo(routeHref({view},true));}
   function open(id){if(id)goTo(routeHref({activity:id},true));}
   async function toggle(){try{await api('/settings',{...data.settings,enabled:!data.settings.enabled},'PUT');reload();setMessage('');}catch(e){setMessage(e.message);}}
-  return <><div className="shell"><aside className="sidebar"><div className="brand"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M5 5H25V12H12V25H5Z" fill="currentColor"/><path d="M17 17H25V25H17Z" fill="#7bacba"/></svg><span>Scrapper</span></div><nav><a href="/compare/"><span className="nav-icon">⇄</span>Comparar fuentes</a>{Object.entries(sections).map(([key,title],i)=><RouteLink className={!activity&&section===key?'active':''} key={key} href={'?view='+key}><span className="nav-icon" aria-hidden="true">{['◉','↓','≡','◎','↗','⚙','!','⚑'][i]}</span>{title}</RouteLink>)}</nav><div className="sidebar-bottom"><span className={'dot '+(data?.daemon.online?'online':'')}/>{data?.daemon.online?'Motor conectado':'Motor sin conexión'}</div></aside><main><header className="topbar"><div><span>{activity?'Historial':sections[section]||'Análisis'}</span></div><div className="inline">{data&&<><Status value={data.settings.enabled?'running':'paused'}/><button className={data.settings.enabled?'':'primary'} onClick={toggle}>{data.settings.enabled?'Pausar scraping':'Activar scraping'}</button></>}</div></header><div className="workspace">{(error||message)&&<p className="error-banner" role="alert">{error||message}</p>}{data?.daemon.error&&<p className="error-banner">{data.daemon.error}</p>}{data&&!data.daemon.online&&<p className="error-banner">El motor no está conectado. Puedes guardar configuración; las tareas se ejecutarán cuando vuelva a estar disponible.</p>}<div className="section-transition" key={activity||section}>{activity?<Activity key={activity} id={activity} onOpen={open}/>:<><div className="page-heading"><h1>{sections[section]||'Análisis'}</h1></div>{data&&section==='dashboard'&&<Monitor data={data}/>} {section==='extract'&&<Extract/>} {section==='active'&&<LiveActivities onOpen={open}/>} {section==='activities'&&<History onOpen={open}/>} {section==='failures'&&<History onOpen={open} failedOnly/>} {section==='seeds'&&<Seeds onOpen={open}/>} {section==='settings'&&data&&<SettingsForm initial={data.settings} onSaved={reload}/>} {section==='domains'&&<Domains onOpen={open}/>} {section==='suspects'&&<Domains onOpen={open} suspects/>}</>}</div></div></main></div></>;
+  const currentTitle=activity?'Historial':sections[section]||'Análisis';
+  const currentDescription=activity?'Detalle completo de una actividad, su resultado y su trazabilidad.':sectionMeta[section]||sectionMeta.dashboard;
+  return <><div className="shell"><aside className="sidebar"><a className="brand" href="/compare/" aria-label="Volver a Clean&Process" title="Volver a Clean&Process"><span className="brand-return-arrow" aria-hidden="true"><img src="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/icons/arrow-left.svg" alt="" /></span><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M5 5H25V12H12V25H5Z" fill="currentColor"/><path d="M17 17H25V25H17Z" fill="#1d5fbf"/></svg><div><strong>Clean&Process</strong><small>Scrapper · extracción web</small></div></a><nav>{Object.entries(navigationSections).map(([key,title])=><RouteLink className={!activity&&section===key?'active':''} key={key} href={'?view='+key}><span className="nav-icon" aria-hidden="true">{navigationIcons[key]}</span><span className="nav-label">{title}</span></RouteLink>)}<button type="button" className="mobile-more-trigger" aria-expanded={mobileMoreOpen} onClick={()=>setMobileMoreOpen(value=>!value)}><span className="nav-icon" aria-hidden="true">⋯</span><span className="nav-label">Más</span></button>{mobileMoreOpen&&<div className="mobile-more-menu">{Object.entries(secondaryNavigationSections).map(([key,title])=><a key={key} href={'?view='+key} onClick={event=>{event.preventDefault();setMobileMoreOpen(false);goTo(routeHref({view:key},true));}}><span className="nav-icon" aria-hidden="true">{navigationIcons[key]}</span>{title}</a>)}</div>}</nav><div className="sidebar-bottom"><span className={'dot '+(data?.daemon.online?'online':'')}/>{data?.daemon.online?'Motor conectado':'Motor sin conexión'}</div></aside><main><header className="topbar"><a className="mobile-back-link" href="/compare/" aria-label="Volver a Clean&Process"><img src="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/icons/arrow-left.svg" alt="" /><span>Clean&Process</span></a><div className="topbar-context"><span>{currentTitle}</span><small>{currentDescription}</small></div><div className="topbar-actions inline">{data&&data.daemon.online&&<><Status value={data.settings.enabled?'running':'paused'}/><button className={data.settings.enabled?'':'primary'} onClick={toggle}>{data.settings.enabled?'Pausar scraping':'Activar scraping'}</button></>}</div></header><div className="workspace">{(error||message)&&<p className="error-banner" role="alert">{error||message}</p>}{data?.daemon.error&&<p className="error-banner">{data.daemon.error}</p>}{data&&!data.daemon.online&&<div className="engine-offline-banner" role="alert"><p>El motor no está conectado. Puedes guardar configuración; las tareas se ejecutarán cuando vuelva a estar disponible.</p><button className="primary" onClick={toggle}>{data.settings.enabled?'Pausar scraping':'Activar scraping'}</button></div>}<div className="section-transition" key={activity||section}>{activity?<Activity key={activity} id={activity} onOpen={open}/>:<><div className="page-heading"><h1>{currentTitle}</h1><p>{currentDescription}</p></div>{data&&section==='dashboard'&&<Monitor data={data}/>} {section==='extract'&&<Extract/>} {section==='active'&&<LiveActivities onOpen={open}/>} {section==='activities'&&<History onOpen={open}/>} {section==='failures'&&<History onOpen={open} failedOnly/>} {section==='seeds'&&<Seeds onOpen={open}/>} {section==='settings'&&data&&<SettingsForm initial={data.settings} onSaved={reload}/>} {section==='domains'&&<Domains onOpen={open}/>} {section==='suspects'&&<Domains onOpen={open} suspects/>}</>}</div></div></main></div></>;
 }

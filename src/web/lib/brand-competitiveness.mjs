@@ -1,21 +1,21 @@
 import {asArray, contractQuestion} from './contract-view.mjs';
 
 const PREFERENCE_LABELS = new Map([
-  ['featured', 'Produto de Alto Valor'],
-  ['preferred', 'Produto de Alto Valor'],
-  ['high_value', 'Produto de Alto Valor'],
-  ['category_leader', 'Líder da Categoria'],
+  ['featured', 'Producto de alto valor'],
+  ['preferred', 'Producto de alto valor'],
+  ['high_value', 'Producto de alto valor'],
+  ['category_leader', 'Líder de la categoría'],
 ]);
 
 const text = value => typeof value === 'string' ? value.trim() : '';
-const key = value => text(value).toLocaleLowerCase('pt-BR');
+const key = value => text(value).toLocaleLowerCase('es');
 
 function sourceAt(sources, index) {
   const source = sources?.[index] || {};
   const url = source.url || null;
   let domain = null;
   try { domain = new URL(url).hostname || null; } catch {}
-  return {index, label: source.label || `Fonte ${'AB'[index] || index + 1}`, url, domain};
+  return {index, label: source.label || `Fuente ${'AB'[index] || index + 1}`, url, domain};
 }
 
 const sourceKey = source => source.domain || `source-${source.index}`;
@@ -59,13 +59,31 @@ function primaryImage(product) {
 }
 
 function productEntry(payload, product, source) {
+  const priceGroups = productPriceGroups(payload, product);
+  const rating = asArray(product?.ratings)[0] || null;
   return {
     product,
     source,
     image: primaryImage(product),
-    rating: asArray(product?.ratings)[0] || null,
-    priceGroups: productPriceGroups(payload, product),
+    rating,
+    priceGroups,
+    costBenefit: costBenefitScore(priceGroups, rating),
     preferences: declaredPreferences(product),
+  };
+}
+
+function costBenefitScore(priceGroups, rating) {
+  const group = asArray(priceGroups).find(item => item?.currency && (item?.price_observed ?? item?.average ?? item?.minimum) != null);
+  const price = numericDecimal(group?.price_observed ?? group?.average ?? group?.minimum);
+  const score = numericDecimal(rating?.score);
+  const maximum = numericDecimal(rating?.scale?.max) ?? numericDecimal(rating?.scale_max);
+  if (!group || price === null || price <= 0 || score === null || maximum === null || maximum <= 0 || score < 0) return null;
+  return {
+    value: score / maximum / price,
+    price,
+    currency: group.currency,
+    rating: score,
+    ratingMaximum: maximum,
   };
 }
 
@@ -88,7 +106,7 @@ export function buildBrandGallery(payloads, sources = [], search = '') {
     if (!payload) return;
     const source = sourceAt(sources, index);
     for (const product of productsOf(payload)) {
-      const brand = text(product?.brand) || 'Marca não declarada';
+      const brand = text(product?.brand) || 'Marca no declarada';
       if (query && !key([brand, product?.name, product?.description, source.label].filter(Boolean).join(' ')).includes(query)) continue;
       const brandKey = key(brand);
       if (!groups.has(brandKey)) groups.set(brandKey, {brand, products: [], sources: new Map()});
@@ -99,7 +117,7 @@ export function buildBrandGallery(payloads, sources = [], search = '') {
   });
   return [...groups.values()]
     .map(group => ({...group, sources: [...group.sources.values()]}))
-    .sort((left, right) => left.brand === 'Marca não declarada' ? 1 : right.brand === 'Marca não declarada' ? -1 : left.brand.localeCompare(right.brand, 'pt-BR'));
+    .sort((left, right) => left.brand === 'Marca no declarada' ? 1 : right.brand === 'Marca no declarada' ? -1 : left.brand.localeCompare(right.brand, 'es'));
 }
 
 export function buildCompetitiveProducts(payloads, sources = []) {
@@ -121,7 +139,7 @@ export function buildCompetitiveProducts(payloads, sources = []) {
     const leaders = entries.filter(entry => entry.preferences.some(item => item.code === 'category_leader'));
     const preferenceSourceCount = new Set(preferred.map(entry => sourceKey(entry.source))).size;
     const leaderSourceCount = new Set(leaders.map(entry => sourceKey(entry.source))).size;
-    const designation = leaderSourceCount >= 2 ? 'Líder da Categoria' : preferenceSourceCount >= 2 ? 'Produto de Alto Valor' : null;
+    const designation = leaderSourceCount >= 2 ? 'Líder de la categoría' : preferenceSourceCount >= 2 ? 'Producto de alto valor' : null;
     const assertionRefs = [...new Set(entries.flatMap(entry => asArray(entry.product?.field_assertion_refs?.gtin)))];
     return [{gtin, entries, sourceCount, preferenceSourceCount, designation, assertionRefs}];
   }).sort((left, right) => (right.designation ? 1 : 0) - (left.designation ? 1 : 0) || right.sourceCount - left.sourceCount);
@@ -148,12 +166,12 @@ function groupPoint(group, entry) {
     raw: value !== null ? String(raw) : null,
     rawMinimum: hasRange ? String(group.minimum) : null,
     rawMaximum: hasRange ? String(group.maximum) : null,
-    basis: value !== null ? (group.price_observed != null ? 'Preço observado' : 'Média recebida') : 'Intervalo recebido',
-    currency: text(group.currency) || 'Moeda não declarada',
+    basis: value !== null ? (group.price_observed != null ? 'Precio observado' : 'Media recibida') : 'Intervalo recibido',
+    currency: text(group.currency) || 'Moneda no declarada',
     variant_ref: group.variant_ref,
     conditions: group.conditions,
     comparison_time: asArray(group.comparison_time),
-    productName: text(entry.product?.name) || 'Produto sem nome',
+    productName: text(entry.product?.name) || 'Producto sin nombre',
     source: entry.source,
   };
 }
@@ -161,7 +179,7 @@ function groupPoint(group, entry) {
 export function buildBrandPriceSeries(payloads, sources = []) {
   const series = new Map();
   for (const group of buildBrandGallery(payloads, sources)) {
-    if (group.brand === 'Marca não declarada') continue;
+    if (group.brand === 'Marca no declarada') continue;
     for (const entry of group.products) {
       for (const priceGroup of entry.priceGroups) {
         const point = groupPoint(priceGroup, entry);
@@ -177,7 +195,7 @@ export function buildBrandPriceSeries(payloads, sources = []) {
 
 export function buildMarketPresence(payloads, sources = []) {
   return buildBrandGallery(payloads, sources)
-    .filter(group => group.brand !== 'Marca não declarada')
+    .filter(group => group.brand !== 'Marca no declarada')
     .map(group => {
       const captured = new Map();
       const relevant = new Map();
@@ -187,5 +205,29 @@ export function buildMarketPresence(payloads, sources = []) {
       }
       return {brand: group.brand, capturedSources: [...captured.values()], relevantSources: [...relevant.values()]};
     })
-    .sort((left, right) => right.relevantSources.length - left.relevantSources.length || right.capturedSources.length - left.capturedSources.length || left.brand.localeCompare(right.brand, 'pt-BR'));
+    .sort((left, right) => right.relevantSources.length - left.relevantSources.length || right.capturedSources.length - left.capturedSources.length || left.brand.localeCompare(right.brand, 'es'));
+}
+
+export function buildCostBenefitRanking(payloads, sources = []) {
+  const rows = buildBrandGallery(payloads, sources)
+    .flatMap(group => group.products.map(entry => ({
+      ...entry,
+      brand: group.brand,
+      productName: text(entry.product?.name) || 'Producto sin nombre',
+      description: text(entry.product?.description) || text(entry.product?.descriptions?.[0]?.text) || 'Descripción no declarada',
+    })))
+    .filter(entry => entry.costBenefit)
+    .sort((left, right) => right.costBenefit.value - left.costBenefit.value);
+
+  const currencies = new Map();
+  for (const entry of rows) {
+    const currency = entry.costBenefit.currency;
+    if (!currencies.has(currency)) currencies.set(currency, []);
+    currencies.get(currency).push(entry);
+  }
+  return [...currencies.entries()].flatMap(([currency, entries]) => entries.map((entry, index) => ({
+    ...entry,
+    rank: index + 1,
+    currency,
+  })));
 }

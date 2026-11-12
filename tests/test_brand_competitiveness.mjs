@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildBrandGallery,
   buildBrandPriceSeries,
+  buildCostBenefitRanking,
   buildCompetitiveProducts,
   buildMarketPresence,
   declaredPreferences,
@@ -66,7 +67,7 @@ test('recognizes only declared preference functions on visible image uses', () =
 test('matches competitors only by resolved exact GTIN and requires multiple sources', () => {
   const matches = buildCompetitiveProducts([result(0), result(1)], sources);
   assert.equal(matches.length, 1);
-  assert.equal(matches[0].designation, 'Produto de Alto Valor');
+  assert.equal(matches[0].designation, 'Producto de alto valor');
   assert.equal(matches[0].sourceCount, 2);
   assert.deepEqual(matches[0].assertionRefs, ['assertion-gtin-0', 'assertion-gtin-1']);
   const unresolved = result(1);
@@ -77,7 +78,7 @@ test('matches competitors only by resolved exact GTIN and requires multiple sour
 
 test('uses the category leader tag only when multiple sources declare it', () => {
   const matches = buildCompetitiveProducts([result(0, {preference: 'category_leader'}), result(1, {preference: 'category_leader'})], sources);
-  assert.equal(matches[0].designation, 'Líder da Categoria');
+  assert.equal(matches[0].designation, 'Líder de la categoría');
 });
 
 test('keeps brand price points separate and never combines currencies or groups', () => {
@@ -86,6 +87,21 @@ test('keeps brand price points separate and never combines currencies or groups'
   assert.deepEqual(series[0].points.map(point => point.raw), ['100', '120']);
   assert.deepEqual(series[0].points.map(point => point.source.label), ['Loja A', 'Loja B']);
   assert.equal(buildBrandPriceSeries([result(0), result(1, {currency: 'USD'})], sources).length, 0);
+});
+
+test('ranks declared cost-benefit using normalized rating divided by price', () => {
+  const ranking = buildCostBenefitRanking([result(0), result(1)], sources);
+  assert.equal(ranking.length, 2);
+  assert.equal(ranking[0].rank, 1);
+  assert.equal(ranking[0].source.label, 'Loja A');
+  assert.equal(ranking[0].costBenefit.price, 100);
+  assert.equal(ranking[0].costBenefit.ratingMaximum, 5);
+  const separateCurrencies = buildCostBenefitRanking([result(0, {currency: 'BRL'}), result(1, {currency: 'USD'})], sources);
+  assert.deepEqual(separateCurrencies.map(row => row.rank), [1, 1]);
+  assert.equal(buildCostBenefitRanking([{
+    ...result(0),
+    products: [{...result(0).products[0], ratings: []}],
+  }], sources).length, 0);
 });
 
 test('plots contractual minimum and maximum as a received interval without inventing an average', () => {

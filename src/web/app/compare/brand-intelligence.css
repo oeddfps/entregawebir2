@@ -32,6 +32,18 @@
 .cp-neutral-tag { background: #eceeef; color: #3d3d3d; }
 .cp-brand-analysis-grid { display: grid; grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr); gap: 12px; align-items: start; }
 .cp-market-presence, .cp-brand-prices, .cp-competitor-matrix { overflow: hidden; }
+.cp-cost-benefit { overflow: hidden; }
+.cp-cost-benefit-list { display: grid; }
+.cp-cost-benefit-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) 190px; align-items: start; gap: 14px; padding: 14px 18px; border-top: 1px solid var(--cp-rule); }
+.cp-cost-benefit-rank { color: var(--cp-blue); font-size: 15px; font-variant-numeric: tabular-nums; }
+.cp-cost-benefit-product { min-width: 0; display: grid; gap: 3px; }
+.cp-cost-benefit-product b { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.cp-cost-benefit-product span, .cp-cost-benefit-product p { color: var(--cp-muted); font-size: 11px; }
+.cp-cost-benefit-product p { margin: 4px 0 0; display: -webkit-box; overflow: hidden; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.cp-cost-benefit-row dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.cp-cost-benefit-row dl > div { display: grid; gap: 3px; }
+.cp-cost-benefit-row dt { color: var(--cp-muted); font-size: 11px; }
+.cp-cost-benefit-row dd { margin: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
 .cp-presence-list { display: grid; }
 .cp-presence-list article { display: grid; gap: 8px; padding: 13px 18px 15px; border-top: 1px solid var(--cp-rule); }
 .cp-presence-list article > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -81,6 +93,8 @@
   .cp-brand-product-image { height: 142px; }
   .cp-carousel-actions { display: none; }
   .cp-price-series { padding-inline: 14px; }
+  .cp-cost-benefit-row { grid-template-columns: 32px minmax(0, 1fr); gap: 10px; padding-inline: 14px; }
+  .cp-cost-benefit-row dl { grid-column: 2; }
   .cp-price-series svg { overflow: visible; }
   .cp-match-table { display: grid; gap: 10px; padding: 0 14px 14px; overflow: visible; }
   .cp-match-head { display: none; }

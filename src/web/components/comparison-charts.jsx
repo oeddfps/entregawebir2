@@ -1,10 +1,6 @@
 'use client';
 
-import {useState} from 'react';
-
 const number = value => new Intl.NumberFormat('es-UY').format(value);
-const METRICS = [['products','Productos identificados'],['image_uses','Usos de imágenes'],['textual_reviews','Reseñas textuales únicas'],['offers','Ofertas registradas']];
-
 function GroupedChart({title,note,groups,names}) {
   const values=groups.flatMap(g=>g.values).filter(v=>v!=null);
   const rawMax=Math.max(1,...values);
@@ -28,14 +24,11 @@ function GroupedChart({title,note,groups,names}) {
 }
 
 export default function ComparisonCharts({results,names}) {
-  const [metric,setMetric]=useState('products');
-  const metricTitle=METRICS.find(([key])=>key===metric)[1];
   const count=(result,predicate)=>result?result.products.filter(predicate).length:null;
   const imageGroups=[['Sin imágenes',0,0],['1 imagen',1,1],['2–4 imágenes',2,4],['5 o más',5,Infinity]].map(([title,min,max])=>({label:title,values:results.map(r=>count(r,p=>{const n=p.images?.length||0;return n>=min&&n<=max;}))}));
   const reviewGroups=[{label:'Con reseñas',values:results.map(r=>count(r,p=>p.reviews?.length>0))},{label:'Sin reseñas',values:results.map(r=>count(r,p=>!p.reviews?.length))}];
   return <section className="cp-comparison-charts" aria-label={results.length===1?'Gráficas de la fuente':'Gráficas comparativas'}>
-    <div className="cp-graph-heading"><div><h2>{results.length===1?'Resumen de la fuente':'Comparación entre fuentes'}</h2><p>{results.length===1?'Indicadores de la URL analizada.':'La misma escala y los mismos indicadores para A y B.'}</p></div><label>Indicador<select aria-label="Indicador de comparación" value={metric} onChange={e=>setMetric(e.target.value)}>{METRICS.map(([key,title])=><option key={key} value={key}>{title}</option>)}</select></label></div>
-    <GroupedChart title={metricTitle} note="Cantidades registradas en esta captura. Las identidades de producto son provisionales." groups={[{label:metricTitle,values:results.map(r=>r?.summary?.[metric]??null)}]} names={names}/>
+    <div className="cp-graph-heading"><div><h2>{results.length===1?'Señales comparables':'Comparación de fuentes'}</h2><p>Distribuciones que ayudan a interpretar las identidades y la evidencia capturada.</p></div></div>
     <div className="cp-chart-grid"><GroupedChart title="Imágenes por producto" note="Distribución de los usos de imágenes asociados a cada identidad." groups={imageGroups} names={names}/><GroupedChart title="Productos con reseñas textuales" note="Presencia de textos asociados; no representa satisfacción ni el total de votos publicados." groups={reviewGroups} names={names}/></div>
     <p className="cp-muted">Se muestra la información de la captura. Los valores cero son distintos de los datos pendientes (—). Las capturas parciales y el contenido externo pueden afectar los resultados.</p>
   </section>;
