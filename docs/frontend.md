@@ -1,5 +1,39 @@
 # Frontend
 
+## Inicio rápido desde un clon nuevo
+
+Requiere Git, Python 3.11+ y Node.js 22+. Esta instalación utiliza el repositorio
+independiente de pruebas. Desde PowerShell:
+
+```powershell
+git clone https://github.com/oeddfps/entregawebir2.git
+cd entregawebir2
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m playwright install chromium
+npm.cmd ci --prefix src/web
+$env:PYTHON = (Resolve-Path .\.venv\Scripts\python.exe).Path
+npm.cmd run dev --prefix src/web
+```
+
+Abrir `http://localhost:3000/compare/` o el puerto que indique Next.js.
+Mantener la terminal abierta: el comando inicia frontend, API y motor.
+Los puertos 3000 y 8787 deben estar disponibles. Si ya existe una API,
+consultar la opción `dev:next` en **Desarrollo y build**.
+
+Pulsar **Ver ejemplo** para comprobar la interfaz con datos de demostración:
+no captura sitios externos ni necesita Jev. Para probar la captura real,
+introducir dos URL públicas y elegir **Configuración avanzada → Solo esta
+página**, con interpretación **Datos estructurados**. Revisar estados y
+diagnósticos de ambas fuentes; no todas las páginas publican los mismos campos.
+Para interpretar texto con Jev, seguir **Configurar Jev desde la interfaz**.
+
+No hace falta copiar un `.env` para esta comprobación inicial. Credenciales,
+historial y datos de otra instalación no se incluyen en el clon. En Linux/macOS,
+crear el entorno con `python3 -m venv .venv`, usar `.venv/bin/python` y `npm`
+en lugar de `npm.cmd`, y exportar `PYTHON` con la ruta absoluta del entorno.
+Los pasos posteriores de build y pruebas se describen más abajo.
+
 ## Stack y estructura
 
 El frontend vive en `src/web` y usa Next.js 16, React 19 y CSS global. No usa Tailwind.
@@ -47,6 +81,29 @@ se guardan bajo `data/`, fuera de Git.
 - `/compare/?comparison=<id>`: reabre una comparación persistida.
 
 Las rutas siguen el estado con URL/`popstate`; no requieren una navegación SPA externa.
+
+### Parámetros de navegación
+
+| Ruta/contexto | Parámetro | Significado |
+| --- | --- | --- |
+| `/` | `view` | `dashboard` (predeterminado), `extract`, `active`, `seeds`, `settings`, `activities`, `failures` o `suspects`. |
+| `/` | `activity` | ID de actividad; abre su detalle en lugar de la sección. |
+| Detalle de actividad | `visit` | ID de captura seleccionado dentro de sus resultados. |
+| `/?view=extract` | `extract_job`, `extract_run` | Job temporal y recorrido persistido; guardar `extract_run` permite recuperar resultados tras reiniciar la API. |
+| `/?view=activities` o `failures` | `page`, `status` | Página desde 1 y filtro de estado; `failures` usa `error` por defecto. |
+| `/?view=seeds` | `page`, `edit`, `origin` | Página del listado; `edit=new` crea un origen, `edit=<id>` lo edita y `origin=<id>` muestra sus páginas. Evitar combinar `edit` y `origin`. |
+| Páginas de un origen/dominio | `q`, `page_status`, `items_page` | Búsqueda, estado y paginación desde 1 de las páginas. |
+| `/?view=suspects` | `domain` | Dominio seleccionado para mostrar sus páginas. |
+| `/compare/` | `mode=single` | Formulario de una fuente; sin ese valor se abre la comparación de dos fuentes. |
+| `/compare/` | `comparison` | ID persistido. Sus fuentes y su origen importado determinan el modo mostrado al cargarlo. |
+
+Ejemplos: `/?view=seeds&edit=new`, `/?view=activities&page=2&status=error`
+y `/compare/?comparison=<id>`. Los ID pertenecen a la instalación que sirve
+la página: copiar el enlace no copia los resultados a otro servidor.
+Pestañas, búsqueda de productos, archivos JSON elegidos y borradores de
+parámetros de comparación viven en React, no se restauran mediante la URL.
+El portal usa `pushState`; la comparación usa `replaceState` para cambiar
+modo/ID. Ambos escuchan `popstate` para sincronizarse con el historial.
 
 ## Tema
 
@@ -119,6 +176,38 @@ Los resultados contractuales se muestran sin inferir equivalencias no respaldada
 - Los diálogos bloquean el fondo, cierran con Escape y devuelven el foco al abrir/cerrar.
 - Los botones y campos deben usar tokens semánticos, no blancos fijos en modo oscuro.
 - Las respuestas pequeñas usan controles sin desbordamiento horizontal.
+
+### Timer y avisos de finalización
+
+`StageTimer` muestra el presupuesto de la **etapa y fuente actuales**, no una
+estimación de duración total. Lee `stage_timer.action`, `source_index`,
+`started_at` y `limit_seconds`; cada captura y procesamiento tiene su contador.
+Los tiempos se fijan al iniciar la operación: editar el borrador del modal no
+cambia un trabajo en ejecución.
+
+El reloj visual se actualiza cada 250 ms y se ancla a `server_time` para
+compensar la diferencia con el reloj local. Los estados llegan por polling.
+Llegar a cero indica límite alcanzado; el servidor cierra la etapa, conserva
+la evidencia y puede continuar con otra fuente o con el procesamiento. No
+significa que toda la comparación haya terminado. Un estado terminal muestra
+cero restante; los trabajos históricos sin timer siguen siendo legibles sin
+mostrar un contador final.
+
+`CompletionWatcher` entrega como máximo un aviso automático por comparación:
+el primer timeout observado o su finalización. Un aviso por timeout impide
+repetirlo al terminar otras etapas. Abrir un resultado histórico ya terminado
+no avisa; una operación nueva se registra explícitamente, incluso si termina
+antes del primer polling. Los ID avisados se guardan en
+`sessionStorage["clean-process:completion-notifications"]` para evitar duplicados
+al recargar esa sesión. No existe coordinación entre pestañas y bloquear ese
+almacenamiento impide garantizar la persistencia de esta deduplicación.
+
+El aviso visible permite **Ver resultados**, cerrarlo y, si no sonó,
+**Reproducir aviso sonoro**. Web Audio requiere interacción del usuario y está
+sujeto a las restricciones del navegador. No son notificaciones del sistema:
+cerrar la página impide recibir avisos y una pestaña suspendida puede
+retrasarlos. El estado del backend y los resultados guardados son la referencia
+para confirmar la finalización.
 
 ## Desarrollo y build
 
@@ -280,6 +369,66 @@ etapa incluye `stage` (`capture`/`process`), `code`, `message` y un `http_status
 opcional. La cancelación conserva resultados
 disponibles. Un reinicio marca las operaciones desprendidas como `interrupted`.
 
+#### Ejemplo de respuesta de estado
+
+Ejemplo ilustrativo completo de `GET /api/comparisons/<id>` durante una captura.
+El POST devuelve el mismo contrato, aunque puede haber avanzado al responder.
+ID, fechas y progreso varían; los campos opcionales pueden ser `null`.
+
+```json
+{
+  "contract_version": "1.0",
+  "comparison_id": "0123456789abcdef0123456789abcdef",
+  "status": "running",
+  "phase": "capture_0",
+  "created_at": "2026-11-20T12:00:00+00:00",
+  "finished_at": null,
+  "imported": false,
+  "synthetic": false,
+  "stage_timer": {
+    "action": "capture",
+    "source_index": 0,
+    "started_at": "2026-11-20T12:00:01+00:00",
+    "limit_seconds": 120
+  },
+  "server_time": "2026-11-20T12:00:02+00:00",
+  "sources": [{
+    "url": "https://example.org/catalog",
+    "label": "Fuente A",
+    "status": "capturing",
+    "capture_status": "running",
+    "processing_status": "queued",
+    "stop_reason": null,
+    "processing_stop_reason": null,
+    "started_at": "2026-11-20T12:00:01+00:00",
+    "capture_finished_at": null,
+    "finished_at": null,
+    "progress": {},
+    "result_available": false,
+    "diagnostics": [],
+    "artifacts": []
+  }],
+  "events": [{"at": "2026-11-20T12:00:00+00:00", "message": "Análisis creado."}]
+}
+```
+
+Ejemplo de un elemento de `sources[].diagnostics` para una fuente fallida
+(no es una respuesta completa):
+
+```json
+{
+  "stage": "capture",
+  "code": "http_error",
+  "message": "La fuente respondió HTTP 404. Comprueba que sea pública y esté disponible.",
+  "http_status": 404
+}
+```
+
+`synthetic: true` identifica el ejemplo de demostración. El historial responde
+`{"items": [...]}`; `/api/comparisons/contract` publica los esquemas de solicitud
+de comparación, importación, estado y presentación (`request`, `import`,
+`state`, `presentation`).
+
 `GET /<id>/sources/<index>` devuelve `Presentation`, definido en
 `clean_process/presentation.py`: `questions`, `products`, `charts`, `issues`,
 `summary`, `findings`, etc. El Output completo descargable usa `data.question_results`.
@@ -301,6 +450,32 @@ La UI consulta `GET /api/scrapes/jobs/<job_id>` cada 1500 ms, recupera su `run_i
 y lee `GET /api/scrapes/<run_id>` y `/visits/<visit_id>`. `extract_run` en la URL
 permite recuperar el resultado persistido aunque el job en memoria ya responda
 404. `GET /api/scrapes` devuelve una lista directa, sin envoltura `items`.
+
+Por ejemplo, el POST responde:
+
+```json
+{"job_id": "abcdef0123456789abcdef0123456789"}
+```
+
+Y `GET /api/scrapes/jobs/<job_id>` puede responder inicialmente:
+
+```json
+{
+  "status": "running",
+  "message": "Preparando recorrido",
+  "run_id": null,
+  "scheduled": 0,
+  "succeeded": 0,
+  "failed": 0,
+  "doubtful": 0,
+  "content_events": 0
+}
+```
+
+Al avanzar aparece `run_id`; al terminar se añade `summary`. El estado `done`
+del job significa recorrido terminado, no éxito de todas las visitas: comprobar
+también `failed`, el resumen y `visit.error`. Los errores de visita permanecen
+en la auditoría al reabrir un resultado histórico.
 
 Las capturas están en `/api/scrapes/<run_id>/visits/<visit_id>/screenshot`,
 `/html?clean=true` y `/actions/<index>/<before|after>/<html|screenshot>`.
@@ -369,6 +544,7 @@ Desde la raíz, después de compilar:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests/test_next_portal.py tests/test_comparison.py tests/test_comparison_portal.py -q
+.\.venv\Scripts\python.exe -m pytest tests/test_jev_credentials.py tests/test_comparison_capture.py tests/test_process_control.py -q
 node --test tests/test_contract_view.mjs tests/test_brand_competitiveness.mjs tests/test_completion_alerts.mjs
 npm.cmd run build --prefix src/web
 ```
@@ -380,6 +556,24 @@ fixtures: una/dos fuentes, evidencia POST, recarga, sincronización `popstate` e
 importación JSON válida/inválida con el mensaje 422 del backend.
 `test_comparison.py` valida contratos, límites, cancelación, persistencia e
 importación mediante workers. Los `.mjs` usan el runner nativo de Node.
+
+`test_jev_credentials.py` verifica guardado y reemplazo con claves ficticias,
+precedencia, aislamiento y errores que no revelan secretos, sin llamar al
+proveedor. `test_comparison_portal.py` incluye guardar por clic/Enter sin cerrar
+el modal ni perder parámetros, validación y diagnósticos por fuente.
+`test_comparison_capture.py` ejecuta workers, Chromium, servidor HTTP local y
+procesamiento reales: dos URL correctas y un HTTP 404 que conserva la otra
+fuente, además de privacidad de los diagnósticos y recuperación de auditoría.
+`test_process_control.py` usa procesos reales para verificar el aislamiento
+por actividad/store y la terminación de descendientes. Estos casos no necesitan
+tráfico hacia sitios públicos ni consumo de Jev. Los avisos y su deduplicación
+se verifican en `test_completion_alerts.mjs`.
+
+Si pytest falla al preparar temporales con `PermissionError`, repetir con
+`--basetemp` apuntando a una **carpeta nueva y exclusiva** en almacenamiento
+local rápido y escribible. Pytest puede borrar el contenido de ese directorio;
+no utilizar una carpeta con datos que deban conservarse. No modificar los
+límites de los tests para compensar problemas de permisos o disco.
 
 La suite general es `python -m pytest -q`. Las pruebas PostgreSQL se omiten sin
 `SCRAPER_TEST_DSN`; no sustituirlo por el DSN de producción. Las pruebas de pool,
