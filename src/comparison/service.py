@@ -13,6 +13,7 @@ from uuid import uuid4
 
 from clean_process.__main__ import write_json
 from .worker import kill_tree, snapshot_capture
+from .diagnostics import stage_diagnostic
 
 TERMINAL = {'done', 'partial', 'failed', 'cancelled', 'interrupted'}
 PROJECT = Path(__file__).resolve().parents[2]
@@ -54,6 +55,13 @@ class ComparisonManager:
                 source['result_available'] = (folder / str(i) / 'presentation.json').is_file()
                 source['artifacts'] = [kind for kind in ('capture', 'import', 'input', 'output', 'presentation', 'usage')
                                        if (folder / str(i) / f'{kind}.json').is_file()]
+                if not source.get('diagnostics'):
+                    source['diagnostics'] = []
+                    for stage, field, reason_field in [('capture', 'capture_status', 'stop_reason'), ('process', 'processing_status', 'processing_stop_reason')]:
+                        if source[field] in ('failed', 'partial'):
+                            diagnostic = stage_diagnostic(folder / str(i), stage, source.get(reason_field) or 'error')
+                            if diagnostic:
+                                source['diagnostics'].append(diagnostic)
             data['server_time'] = now()
             return data
 
@@ -151,7 +159,8 @@ class ComparisonManager:
                         snapshot_capture(folder / str(i))
                     captured = (folder / str(i) / 'capture.json').is_file()
                     self.update(identity, source=i, capture_status='done' if reason == 'done' else 'partial' if captured else 'failed',
-                                status='captured' if captured else 'failed', stop_reason=reason, capture_finished_at=now())
+                                status='captured' if captured else 'failed', stop_reason=reason, capture_finished_at=now(),
+                                diagnostics=[diagnostic] if (diagnostic := stage_diagnostic(folder / str(i), 'capture', reason)) else [])
             for i in range(len(request['sources'])):
                 if cancelled.is_set():
                     break
@@ -165,7 +174,9 @@ class ComparisonManager:
                 reason = self.executor(folder, 'process', i, request, cancelled, task)
                 available = (folder / str(i) / 'presentation.json').is_file()
                 self.update(identity, source=i, processing_status='done' if available else 'failed',
-                            status='done' if available else 'failed', processing_stop_reason=reason, finished_at=now())
+                            status='done' if available else 'failed', processing_stop_reason=reason, finished_at=now(),
+                            diagnostics=[*self.get(identity)['sources'][i].get('diagnostics', []),
+                                         *([diagnostic] if (diagnostic := stage_diagnostic(folder / str(i), 'process', reason)) else [])])
             data = self.get(identity)
             ready = sum(s['result_available'] for s in data['sources'])
             partial = any(s['capture_status'] == 'partial' or s.get('stop_reason') in ('error', 'timeout') for s in data['sources'])

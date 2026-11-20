@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -8,6 +7,7 @@ from pydantic import BaseModel, Field
 from clean_process import Input, Output
 from clean_process.presentation import Presentation
 from ..integrations.clean_process import from_scraper
+from ..common.semantic_model import api_key
 from .contracts import ComparisonRequest, ImportRequest, ComparisonState
 from .service import ComparisonManager
 
@@ -16,9 +16,8 @@ def router(manager: ComparisonManager):
     api = APIRouter(prefix='/api/comparisons', tags=['Comparaciones'])
 
     def configured(mode):
-        key = 'TYPESAFE_TEST_API_KEY' if os.getenv('TYPESAFE_TEST_MODE') == '1' else 'TYPESAFE_API_KEY'
-        if mode == 'jev' and not os.getenv(key):
-            raise HTTPException(422, 'Jev requiere una credencial configurada en el entorno del servicio.')
+        if mode == 'jev' and not api_key():
+            raise HTTPException(422, 'Configura tu clave API en el panel Jev antes de iniciar el análisis.')
 
     @api.get('')
     def history():

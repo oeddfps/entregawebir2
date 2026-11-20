@@ -1,6 +1,7 @@
 'use client';
 
 import {useState} from 'react';
+import JevCredentials from './jev-credentials';
 
 export function settingsSummary(limits, interpreter) {
   return `${limits.capture_seconds} s de captura · ${limits.processing_seconds} s de procesamiento · ${limits.max_pages == null ? 'visitas sin límite' : `${limits.max_pages} visita(s)`} · ${limits.max_hops == null ? 'saltos sin límite' : `${limits.max_hops} salto(s)`} · ${limits.same_host_only ? 'mismo sitio' : 'otros sitios permitidos'} · ${interpreter === 'jev' ? 'Jev' : 'Datos estructurados'}`;
@@ -33,7 +34,7 @@ export default function ProcessingSettings({limits, interpreter, onConfirm, onCl
           <div className="cp-option-fields">
             <label>Tiempo máximo de procesamiento (segundos)<input type="number" required min="5" max="600" step="1" value={draft.processing_seconds??''} onChange={e=>update('processing_seconds',e.target.value===''?null:Number(e.target.value))}/><small>Entre 5 y 600 segundos por fuente.</small></label>
             <label>Interpretación<select value={method} onChange={e=>setMethod(e.target.value)}><option value="declared">Datos estructurados</option><option value="jev">Jev · interpretar texto libre</option></select><small>Jev requiere credenciales y puede generar consumo.</small></label>
-          </div><p>Reseñas y valoraciones: vocabulario multilingüe y E5 local cuando está disponible. Las funciones de las imágenes requieren evidencia visual.</p>
+          </div>{method==='jev'&&<JevCredentials/>}<p>Reseñas y valoraciones: vocabulario multilingüe y E5 local cuando está disponible. Las funciones de las imágenes requieren evidencia visual.</p>
         </fieldset>
         <footer><span>Los cambios se aplican al confirmar y se usan en la próxima ejecución.</span><div><button type="button" className="cp-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="cp-primary">Confirmar parámetros</button></div></footer>
       </form>

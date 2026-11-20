@@ -554,13 +554,14 @@ def test_failed_activity_reports_referring_page_and_activity(tmp_path):
 
 
 def test_history_deletion_terminates_only_exclusive_worker(tmp_path):
-    import subprocess,sys
+    import os,subprocess,sys
     store,seed=setup(tmp_path)
     activity=store.claim(1)
     process=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)','src.persistent.worker','--root',str(store.root),'--activity',activity],start_new_session=True)
     try:
         store.clear_seed_history(seed['id'],AuditStore(tmp_path/'audit'))
-        assert process.wait(timeout=3)==-9
+        code=process.wait(timeout=3)
+        assert code != 0 if os.name == 'nt' else code == -9
         assert store.activity(activity) is None
     finally:
         if process.poll() is None:process.kill();process.wait()

@@ -8,6 +8,7 @@ import time
 from playwright.sync_api import sync_playwright
 
 from src.persistent.browser_pool import BrowserPool, process_memory
+from src.persistent.processes import terminate_tree
 
 
 def test_shared_browser_isolation_pause_and_accounting(tmp_path):
@@ -76,7 +77,7 @@ with sync_playwright() as p:
             cdp=browser.new_browser_cdp_session()
             count=lambda:len([t for t in cdp.send('Target.getTargets')['targetInfos'] if t['type']=='page'])
             assert count()==2
-            os.killpg(child.pid,signal.SIGKILL);child.wait(timeout=5)
+            terminate_tree(child.pid);child.wait(timeout=5)
             pool.release('one')
             deadline=time.monotonic()+5
             while count()!=1 and time.monotonic()<deadline:page.wait_for_timeout(100)
@@ -85,7 +86,7 @@ with sync_playwright() as p:
             browser.close();pool.release('two')
     finally:
         if child and child.poll() is None:
-            os.killpg(child.pid,signal.SIGKILL);child.wait()
+            terminate_tree(child.pid);child.wait()
         pool.close()
 
 
@@ -93,7 +94,7 @@ def test_prepare_does_not_wait_for_browser_startup(tmp_path,monkeypatch):
     from types import SimpleNamespace
     import io
     now=[10.0]
-    process=SimpleNamespace(poll=lambda:None,stdin=io.StringIO())
+    process=SimpleNamespace(pid=2**30,poll=lambda:None,stdin=io.StringIO())
     monkeypatch.setattr('src.persistent.browser_pool.subprocess.Popen',lambda *a,**k:process)
     monkeypatch.setattr('src.persistent.browser_pool.time.monotonic',lambda:now[0])
     pool=BrowserPool(tmp_path)

@@ -10,6 +10,7 @@ from playwright.sync_api import Error
 
 from src.persistent.browser_connection import SharedBrowserConnection
 from src.persistent.browser_pool import BrowserPool
+from src.persistent.processes import terminate_tree
 
 
 @pytest.fixture
@@ -56,7 +57,7 @@ def test_direct_disconnection_reports_error_without_hanging(shared):
     pool,one,_=shared
     with SharedBrowserConnection(one['SCRAPER_BROWSER_ENDPOINT']) as browser:
         page=browser.new_page()
-        os.kill(pool.hosts[0]['process'].pid,signal.SIGKILL)
+        pool.hosts[0]['process'].kill()
         with pytest.raises(Error,match='close|disconnect|Connection'):
             page.evaluate('1+1')
 
@@ -110,5 +111,5 @@ with SharedBrowserConnection(os.environ['SCRAPER_BROWSER_ENDPOINT']) as b:
         assert b.poll() is None
     finally:
         for p in processes:
-            if p.poll() is None:os.killpg(p.pid,signal.SIGKILL);p.wait()
+            if p.poll() is None:terminate_tree(p.pid);p.wait()
             p.stdin.close();p.stdout.close()

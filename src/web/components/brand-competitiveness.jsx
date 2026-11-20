@@ -73,8 +73,8 @@ function BrandPriceVariation({series}) {
 }
 
 function CompetitorMatrix({matches, onOpen, onEvidence}) {
-  return <section className="cp-card cp-competitor-matrix"><header className="cp-card-heading"><div><h2>Análisis de productos de alto valor</h2><p>Correspondencia entre sitios solo por GTIN exacto con identidad resuelta. La preferencia debe declararse en al menos dos fuentes.</p></div></header>
-    {!matches.length ? <div className="cp-brand-empty" role="status"><h3>Equivalencia no establecida</h3><p>Ningún producto tiene el mismo GTIN resuelto en dos fuentes. Los nombres, fotos y descripciones no se utilizan para presumir identidad.</p></div> : <div className="cp-match-list">{matches.map(match => <article key={match.gtin}>
+  return <section className="cp-card cp-competitor-matrix"><header className="cp-card-heading"><div><h2>Análisis de productos de alto valor</h2><p>Comparación entre sitios con el mismo código GTIN confirmado. La preferencia debe aparecer en al menos dos fuentes.</p></div></header>
+    {!matches.length ? <div className="cp-brand-empty" role="status"><h3>Coincidencia no establecida</h3><p>No encontramos el mismo código GTIN confirmado en dos fuentes. Los nombres, fotos y descripciones no bastan por sí solos para confirmar que son el mismo producto.</p></div> : <div className="cp-match-list">{matches.map(match => <article key={match.gtin}>
       <header><div><span>GTIN {match.gtin}</span><h3>{match.entries[0].product.name || 'Producto sin nombre declarado'}</h3></div>{match.designation ? <strong className="cp-value-tag">{match.designation}</strong> : <span className="cp-neutral-tag">Sin preferencia entre sitios declarada</span>}</header>
       <div className="cp-match-table" role="table" aria-label={`Comparación del GTIN ${match.gtin}`}>
         <div className="cp-match-row cp-match-head" role="row"><span role="columnheader">Fuente / página</span><span role="columnheader">Precio</span><span role="columnheader">Valoración</span><span role="columnheader">Señal declarada</span></div>

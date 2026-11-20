@@ -75,8 +75,8 @@
 .cp-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
 .cp-heading > div:first-child { display: grid; gap: 7px; }
 .cp-heading p { color: var(--cp-muted); font-size: 14px; }
-.cp-heading-actions { display: flex; align-items: end; gap: 10px; }
-.cp-heading-actions label { display: grid; gap: 5px; color: var(--cp-muted); font-size: 12px; }
+.cp-heading-actions { display: flex; align-items: center; gap: 10px; }
+.cp-heading-actions label { display: none; }
 .cp-heading-actions select, .cp-app .cp-card-heading select, .cp-contract-filters select {
   height: 36px;
   border: 1px solid var(--cp-control);
@@ -194,6 +194,21 @@
 .cp-empty p, .cp-contract-empty p { max-width: 520px; font-size: 12px; }
 .cp-contract-empty strong { color: var(--cp-ink); font-size: 14px; }
 .cp-empty-small { min-height: 110px; }
+.cp-empty-guide{
+  min-height:92px;
+  margin-top:16px;
+  padding:18px 20px;
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  border:1px solid var(--cp-border);
+  border-radius:8px;
+  background:var(--cp-surface);
+  color:var(--cp-ink);
+}
+.cp-empty-guide > svg{flex:none;margin-top:2px;color:var(--cp-muted)}
+.cp-empty-guide h2{margin:0;font-size:15px}
+.cp-empty-guide p{margin-top:5px;color:var(--cp-muted);font-size:12px}
 
 .cp-product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 0 18px 18px; }
 .cp-app .cp-product-card { min-width: 0; overflow: hidden; padding: 0; border: 1px solid var(--cp-border); border-radius: 6px; background: #fff; color: inherit; text-align: left; }
@@ -403,6 +418,8 @@
 .cp-notice-bell { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #eceeef; color: var(--cp-data); }
 .cp-completion-notice > div { min-width: 0; flex: 1; }
 .cp-completion-notice p { margin-top: 4px; color: var(--cp-muted); font-size: 12px; }
+.cp-notification-action { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 0; border: 0; color: var(--cp-data); background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cp-notification-action:hover { text-decoration: underline; }
 .cp-completion-notice > .cp-secondary { min-height: 28px; padding: 2px 7px; }
 
 .cp-stage-timer { margin: 12px 0; padding: 14px 0; display: flex; align-items: center; gap: 18px; border-top: 1px solid var(--cp-rule); border-bottom: 1px solid var(--cp-rule); }
@@ -515,6 +532,120 @@
 @media (prefers-reduced-motion: reduce) {
   .cp-app *, .cp-app *::before, .cp-app *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+:root[data-theme="dark"] .cp-app,
+.dark .cp-app {
+  --cp-ground:#09090b;
+  --cp-surface:#18181b;
+  --cp-raised:#27272a;
+  --cp-active:#27272a;
+  --cp-border:#27272a;
+  --cp-rule:#27272a;
+  --cp-control:#52525b;
+  --cp-ink:#fafafa;
+  --cp-muted:#a1a1aa;
+  --cp-primary:#38a3d1;
+  --cp-data:#93b4ff;
+  --cp-positive:#86efac;
+  --cp-negative:#fda4af;
+  --cp-a:#fafafa;
+  --cp-b:#93b4ff;
+  color-scheme:dark;
+}
+
+:root[data-theme="dark"] .cp-app,
+.dark .cp-app {
+  background:var(--cp-ground);
+  color:var(--cp-ink);
+}
+:root[data-theme="dark"] .cp-app .cp-secondary,
+:root[data-theme="dark"] .cp-app .cp-more,
+:root[data-theme="dark"] .cp-app .cp-stop,
+:root[data-theme="dark"] .cp-app .cp-edit-setup,
+:root[data-theme="dark"] .cp-app .cp-product-card,
+:root[data-theme="dark"] .cp-app .cp-product-source,
+:root[data-theme="dark"] .cp-app .cp-steps li > span,
+:root[data-theme="dark"] .cp-app .cp-drawer,
+:root[data-theme="dark"] .cp-app .cp-drawer > header button,
+:root[data-theme="dark"] .cp-app .cp-settings,
+:root[data-theme="dark"] .cp-app .cp-completion-notice,
+:root[data-theme="dark"] .cp-app .cp-node-detail,
+:root[data-theme="dark"] .cp-app .theme-toggle,
+.dark .cp-app .cp-secondary,
+.dark .cp-app .cp-more,
+.dark .cp-app .cp-stop,
+.dark .cp-app .cp-edit-setup,
+.dark .cp-app .cp-product-card,
+.dark .cp-app .cp-product-source,
+.dark .cp-app .cp-steps li > span,
+.dark .cp-app .cp-drawer,
+.dark .cp-app .cp-drawer > header button,
+.dark .cp-app .cp-settings,
+.dark .cp-app .cp-completion-notice,
+.dark .cp-app .cp-node-detail,
+.dark .cp-app .theme-toggle{
+  background:var(--cp-surface);
+  color:var(--cp-ink);
+  border-color:var(--cp-control);
+}
+:root[data-theme="dark"] .cp-app .cp-primary,
+.dark .cp-app .cp-primary{
+  background:var(--cp-primary);
+  color:#09090b;
+  border-color:var(--cp-primary);
+}
+:root[data-theme="dark"] .cp-app input,
+:root[data-theme="dark"] .cp-app select,
+:root[data-theme="dark"] .cp-app textarea,
+:root[data-theme="dark"] .cp-app .cp-option-fields input,
+:root[data-theme="dark"] .cp-app .cp-option-fields select,
+.dark .cp-app input,
+.dark .cp-app select,
+.dark .cp-app textarea,
+.dark .cp-app .cp-option-fields input,
+.dark .cp-app .cp-option-fields select{
+  background:var(--cp-surface);
+  color:var(--cp-ink);
+  border-color:var(--cp-control);
+  color-scheme:dark;
+}
+:root[data-theme="dark"] .cp-app input::placeholder,
+:root[data-theme="dark"] .cp-app textarea::placeholder,
+.dark .cp-app input::placeholder,
+.dark .cp-app textarea::placeholder{color:#71717a}
+:root[data-theme="dark"] .cp-app .cp-product-image,
+:root[data-theme="dark"] .cp-app .cp-brand-product-image,
+:root[data-theme="dark"] .cp-app .cp-image-use-media,
+:root[data-theme="dark"] .cp-app .cp-detail-gallery img,
+:root[data-theme="dark"] .cp-app .cp-graph-layout svg,
+:root[data-theme="dark"] .cp-app pre,
+:root[data-theme="dark"] .cp-app .cp-term-measure,
+:root[data-theme="dark"] .cp-app .cp-bar-track,
+:root[data-theme="dark"] .cp-app .cp-match-head,
+:root[data-theme="dark"] .cp-app .cp-sidebar,
+.dark .cp-app .cp-product-image,
+.dark .cp-app .cp-brand-product-image,
+.dark .cp-app .cp-image-use-media,
+.dark .cp-app .cp-detail-gallery img,
+.dark .cp-app .cp-graph-layout svg,
+.dark .cp-app pre,
+.dark .cp-app .cp-term-measure,
+.dark .cp-app .cp-bar-track,
+.dark .cp-app .cp-match-head,
+.dark .cp-app .cp-sidebar{
+  background:var(--cp-raised);
+  color:var(--cp-ink);
+}
+:root[data-theme="dark"] .cp-app .cp-coverage-row > button:not(:disabled):hover,
+:root[data-theme="dark"] .cp-app .cp-sidebar nav a:hover,
+.dark .cp-app .cp-coverage-row > button:not(:disabled):hover,
+.dark .cp-app .cp-sidebar nav a:hover{background:var(--cp-active)}
+:root[data-theme="dark"] .cp-app .cp-text-button,
+:root[data-theme="dark"] .cp-app .cp-downloads a,
+:root[data-theme="dark"] .cp-app .cp-evidence-source > a,
+.dark .cp-app .cp-text-button,
+.dark .cp-app .cp-downloads a,
+.dark .cp-app .cp-evidence-source > a{color:#93c5fd}
 
 .cp-tabs {
   scroll-behavior: smooth;

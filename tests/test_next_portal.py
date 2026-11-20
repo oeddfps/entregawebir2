@@ -11,6 +11,7 @@ from playwright.sync_api import sync_playwright, expect
 from src.persistent.store import Store
 from src.persistent.api import router
 from src.common.scrapper import AuditStore
+from src.server.credentials import router as credentials_router
 
 WEB=Path(__file__).resolve().parents[1]/'src/web/out'
 
@@ -22,6 +23,7 @@ def portal(tmp_path):
     seed=store.save_seed({'url':'https://example.org/','allowed_domains':['example.org']})
     for i in range(24):store.discover(seed['id'],f'https://example.org/products/shoes-{i}',1)
     app=FastAPI();app.include_router(router(store,AuditStore(tmp_path/'audit')))
+    app.include_router(credentials_router)
     client=TestClient(app)
     with sync_playwright() as p:
         browser=p.chromium.launch()
@@ -29,6 +31,11 @@ def portal(tmp_path):
         errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         def serve(route):
             parsed=urlsplit(route.request.url)
+            if parsed.path == '/api/service/engine/restart':
+                # Recovery orchestration has its own worker tests. UI fixtures
+                # must never start a daemon against the installation's queue.
+                route.fulfill(status=200, json={'started': True, 'message': 'Reinicio simulado en la prueba.'})
+                return
             if parsed.path.startswith('/api/'):
                 response=client.request(route.request.method,parsed.path+('?' + parsed.query if parsed.query else ''),content=route.request.post_data,headers={'Content-Type':'application/json'})
                 route.fulfill(status=response.status_code,body=response.content,content_type='application/json')
@@ -182,6 +189,18 @@ def test_global_config_fifty_threads_survives_reload(portal):
     page.reload()
     expect(page.get_by_label('Threads simultáneos',exact=True)).to_have_value('50')
     assert store.settings()['retry_delay']==45
+    assert not errors
+
+
+def test_semantic_activity_does_not_claim_model_calls_are_free(portal):
+    page, store, errors = portal
+    store.save_settings({**store.settings(), 'enabled': True})
+    activity = store.claim(1)
+    page.goto('http://studio.test/?activity=' + activity)
+    expect(page.locator('.activity-meta')).to_contain_text('Semántica')
+    expect(page.locator('.activity-meta')).not_to_contain_text('US$0')
+    page.goto('http://studio.test/?view=settings')
+    expect(page.get_by_text('Extractor semántico · Jev puede interpretar campos cuando hay una credencial configurada.', exact=True)).to_be_visible()
     assert not errors
 
 

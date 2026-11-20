@@ -73,7 +73,7 @@ export function CoverageMatrix({results, names, onOpen}) {
   const total = Math.max(1, asArray(results).length * QUESTION_DEFINITIONS.length);
   return <section className="cp-coverage" aria-labelledby="contract-coverage-title">
     <header className="cp-section-heading">
-      <div><h2 id="contract-coverage-title">Cobertura del contrato</h2><p>Las respuestas se resuelven por <code>question_id</code>; parcial no equivale a vacío.</p></div>
+      <div><h2 id="contract-coverage-title">Cobertura de datos</h2><p>Indicadores extraídos automáticamente de cada fuente. Un resultado parcial sigue teniendo información útil.</p></div>
       <p className="cp-coverage-summary"><strong>{counts.answered}</strong> de {total} respondidas{counts.partial ? ` · ${counts.partial} parciales` : ''}</p>
     </header>
     <div className="cp-coverage-table" role="table" aria-label="Cobertura por pregunta y fuente">

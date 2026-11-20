@@ -309,6 +309,72 @@ def test_capture_can_delegate_interpretation_without_calling_a_model(monkeypatch
     assert analysis.result.classification['coverage']['field_interpretation']['enabled'] is False
 
 
+@pytest.mark.parametrize('credential_source', ['file', 'environment', 'test'])
+def test_comparison_api_and_worker_share_jev_credentials(tmp_path, monkeypatch, credential_source):
+    from src.common import semantic_model
+    from src.comparison import worker
+
+    env_file = tmp_path / '.env'
+    env_file.write_text('TYPESAFE_API_KEY=file-fixture\n', encoding='utf-8')
+    monkeypatch.setattr(semantic_model, 'ENV_FILE', env_file)
+    monkeypatch.setattr(semantic_model, 'SAVED_KEY_FILE', tmp_path / 'saved-jev.json')
+    monkeypatch.delenv('TYPESAFE_API_KEY', raising=False)
+    monkeypatch.delenv('TYPESAFE_TEST_API_KEY', raising=False)
+    monkeypatch.delenv('TYPESAFE_TEST_MODE', raising=False)
+    expected = 'file-fixture'
+    if credential_source == 'environment':
+        monkeypatch.setenv('TYPESAFE_API_KEY', 'environment-fixture')
+        expected = 'environment-fixture'
+    elif credential_source == 'test':
+        monkeypatch.setenv('TYPESAFE_TEST_MODE', '1')
+        monkeypatch.setenv('TYPESAFE_TEST_API_KEY', 'test-fixture')
+        expected = 'test-fixture'
+
+    # Validate admission without starting a browser or contacting Jev.
+    manager = ComparisonManager(tmp_path / 'jobs', executor=lambda *args: 'error')
+    app = FastAPI()
+    app.include_router(router(manager))
+    spec = request()
+    spec['interpreter'] = 'jev'
+    try:
+        with TestClient(app) as client:
+            assert client.post('/api/comparisons', json=spec).status_code == 202
+    finally:
+        manager.close()
+
+    output = fixture_output()
+    def process_without_network(data, *, interpreter, review_recognizer):
+        assert interpreter.predictor.api_key == expected
+        return output
+    monkeypatch.setattr(worker, 'process', process_without_network)
+    folder = tmp_path / 'processing'
+    write_json(folder / 'import.json', examples()[0])
+    worker.processing(folder, 'jev', review_recognition='off')
+    assert (folder / 'presentation.json').is_file()
+
+
+def test_comparison_test_mode_never_uses_server_credential(tmp_path, monkeypatch):
+    from src.common import semantic_model
+    env_file = tmp_path / '.env'
+    env_file.write_text('TYPESAFE_API_KEY=server-file-fixture\n', encoding='utf-8')
+    monkeypatch.setattr(semantic_model, 'ENV_FILE', env_file)
+    monkeypatch.setattr(semantic_model, 'SAVED_KEY_FILE', tmp_path / 'saved-jev.json')
+    monkeypatch.setenv('TYPESAFE_API_KEY', 'server-environment-fixture')
+    monkeypatch.setenv('TYPESAFE_TEST_MODE', '1')
+    monkeypatch.delenv('TYPESAFE_TEST_API_KEY', raising=False)
+    manager = ComparisonManager(tmp_path / 'jobs')
+    app = FastAPI()
+    app.include_router(router(manager))
+    try:
+        with TestClient(app) as client:
+            spec = request()
+            spec['interpreter'] = 'jev'
+            assert client.post('/api/comparisons', json=spec).status_code == 422
+            assert not manager.list()
+    finally:
+        manager.close()
+
+
 def test_scraper_published_review_counts_survive_adapter_and_projection():
     from src.integrations.clean_process import from_scraper
     parts = [{'class': key, 'values': [{'text': value}]} for key, value in [

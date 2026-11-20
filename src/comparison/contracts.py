@@ -51,6 +51,13 @@ class ImportRequest(Contract):
     limits: Limits = Field(default_factory=Limits)
 
 
+class StageDiagnostic(Contract):
+    stage: Literal['capture', 'process']
+    code: str
+    message: str
+    http_status: int | None = None
+
+
 class SourceState(Contract):
     url: str
     label: str
@@ -64,6 +71,7 @@ class SourceState(Contract):
     finished_at: str | None = None
     progress: dict[str, JsonValue] = Field(default_factory=dict)
     result_available: bool
+    diagnostics: list[StageDiagnostic] = Field(default_factory=list)
     artifacts: list[Literal['capture', 'import', 'input', 'output', 'presentation', 'usage']]
 
 

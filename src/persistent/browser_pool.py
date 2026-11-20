@@ -7,6 +7,7 @@ import subprocess
 import time
 from pathlib import Path
 import playwright
+from .processes import process_handle, terminate_tree, memory_mb
 
 
 class BrowserPool:
@@ -44,11 +45,17 @@ class BrowserPool:
             status=self.root/f'{group}.json'
             status.unlink(missing_ok=True)
             log=open(self.root/f'{group}.log','a')
-            process=subprocess.Popen([str(driver/'node'),str(Path(__file__).with_name('browser_host.cjs')),str(driver/'package'),str(status)],stdin=subprocess.PIPE,stdout=log,stderr=log,text=True,start_new_session=True)
+            flags = {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {'start_new_session': True}
+            process=subprocess.Popen([str(driver/('node.exe' if os.name == 'nt' else 'node')),str(Path(__file__).with_name('browser_host.cjs')),str(driver/'package'),str(status)],stdin=subprocess.PIPE,stdout=log,stderr=log,text=True,**flags)
             self.hosts[group]=dict(process=process,status=status,last_used=time.monotonic(),log=log,deadline=time.monotonic()+30)
+            if os.name == 'nt':
+                self.hosts[group]['process_handle'] = process_handle(process.pid)
             return False
         host=self.hosts[group]
-        if self._status(host).get('endpoint'):
+        state = self._status(host)
+        if state.get('endpoint'):
+            if os.name == 'nt' and state.get('pid') and 'browser_handle' not in host:
+                host['browser_handle'] = process_handle(state['pid'])
             return True
         if time.monotonic()>host['deadline']:
             self._stop(host)
@@ -104,6 +111,16 @@ class BrowserPool:
     @staticmethod
     def _stop(host):
         process=host['process']
+        if os.name == 'nt':
+            try:
+                terminate_tree(host.get('browser_handle'))
+                terminate_tree(host.get('process_handle'))
+                process.wait(timeout=5)
+            finally:
+                if process.stdin:process.stdin.close()
+                host['log'].close()
+                host['status'].unlink(missing_ok=True)
+            return
         if process.poll() is None:
             process.terminate()
             try:process.wait(timeout=5)
@@ -122,10 +139,4 @@ class BrowserPool:
 
 
 def process_memory(pids):
-    total=0
-    for pid in pids:
-        try:
-            text=(Path('/proc')/str(pid)/'smaps_rollup').read_text()
-            total+=next(int(line.split()[1]) for line in text.splitlines() if line.startswith('Pss:'))/1024
-        except (OSError,ValueError,StopIteration):pass
-    return total
+    return memory_mb(pids)

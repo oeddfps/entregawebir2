@@ -78,6 +78,19 @@
 .cp-match-row a { width: fit-content; }
 .cp-match-head { color: var(--cp-muted); background: #fafbfc; }
 .cp-match-head > span { padding-block: 8px; font-size: 11px; }
+
+:root[data-theme="dark"] .cp-app .cp-carousel-actions button,
+:root[data-theme="dark"] .cp-app .cp-brand-product-open,
+:root[data-theme="dark"] .cp-app .cp-brand-product-image,
+:root[data-theme="dark"] .cp-app .cp-presence-list progress,
+.dark .cp-app .cp-carousel-actions button,
+.dark .cp-app .cp-brand-product-open,
+.dark .cp-app .cp-brand-product-image,
+.dark .cp-app .cp-presence-list progress{
+  background:var(--cp-surface);
+  color:var(--cp-ink);
+  border-color:var(--cp-control);
+}
 .cp-match-row .cp-text-button { width: fit-content; min-height: 24px; padding: 2px 0; }
 
 @media (max-width: 1100px) {

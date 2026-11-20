@@ -42,7 +42,7 @@ def test_heartbeat_while_browser_starts_then_fill_all_free_slots(tmp_path,monkey
     monkeypatch.setattr(worker,'process_snapshot',lambda:{})
     monkeypatch.setattr(worker.subprocess,'Popen',spawn)
     monkeypatch.setattr(worker.signal,'signal',lambda sig,handler:signals.update({sig:handler}))
-    monkeypatch.setattr(worker.os,'killpg',lambda *args:None)
+    monkeypatch.setattr(worker,'terminate_tree',lambda *args:None)
     monkeypatch.setattr(worker.time,'sleep',lambda _:None)
     monkeypatch.setattr(worker.time,'monotonic',lambda:100)
     monkeypatch.setattr(store,'heartbeat',heartbeat)

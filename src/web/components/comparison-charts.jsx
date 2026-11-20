@@ -28,8 +28,8 @@ export default function ComparisonCharts({results,names}) {
   const imageGroups=[['Sin imágenes',0,0],['1 imagen',1,1],['2–4 imágenes',2,4],['5 o más',5,Infinity]].map(([title,min,max])=>({label:title,values:results.map(r=>count(r,p=>{const n=p.images?.length||0;return n>=min&&n<=max;}))}));
   const reviewGroups=[{label:'Con reseñas',values:results.map(r=>count(r,p=>p.reviews?.length>0))},{label:'Sin reseñas',values:results.map(r=>count(r,p=>!p.reviews?.length))}];
   return <section className="cp-comparison-charts" aria-label={results.length===1?'Gráficas de la fuente':'Gráficas comparativas'}>
-    <div className="cp-graph-heading"><div><h2>{results.length===1?'Señales comparables':'Comparación de fuentes'}</h2><p>Distribuciones que ayudan a interpretar las identidades y la evidencia capturada.</p></div></div>
-    <div className="cp-chart-grid"><GroupedChart title="Imágenes por producto" note="Distribución de los usos de imágenes asociados a cada identidad." groups={imageGroups} names={names}/><GroupedChart title="Productos con reseñas textuales" note="Presencia de textos asociados; no representa satisfacción ni el total de votos publicados." groups={reviewGroups} names={names}/></div>
+    <div className="cp-graph-heading"><div><h2>{results.length===1?'Señales comparables':'Comparación de fuentes'}</h2><p>Indicadores extraídos automáticamente de cada fuente.</p></div></div>
+    <div className="cp-chart-grid"><GroupedChart title="Imágenes por producto" note="Cantidad de imágenes asociadas a cada producto encontrado." groups={imageGroups} names={names}/><GroupedChart title="Productos con reseñas textuales" note="Presencia de textos asociados; no representa satisfacción ni el total de votos publicados." groups={reviewGroups} names={names}/></div>
     <p className="cp-muted">Se muestra la información de la captura. Los valores cero son distintos de los datos pendientes (—). Las capturas parciales y el contenido externo pueden afectar los resultados.</p>
   </section>;
 }

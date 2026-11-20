@@ -79,6 +79,6 @@ export default function BrandGallery({groups, matches, onOpen}) {
   const designations = new Map(matches.flatMap(match => match.designation ? match.entries.map(entry => [`${entry.source.index}:${entry.product.entity_id}`, match.designation]) : []));
   return <section className="cp-brand-gallery" aria-labelledby="brand-gallery-title">
     <header className="cp-brand-section-heading"><div><h2 id="brand-gallery-title">Galería por marca</h2><p>Fotos, nombres, precios y valoraciones permanecen vinculados a la fuente y a los grupos contractuales recibidos.</p></div><span>{groups.length} marca(s)</span></header>
-    {!groups.length ? <div className="cp-brand-empty" role="status"><h3>No se encontraron marcas</h3><p>Los productos aparecerán cuando el backend declare el campo de marca en el contrato semántico.</p></div> : groups.map(group => <BrandRail key={group.brand.toLocaleLowerCase('es')} group={group} designations={designations} onOpen={onOpen}/>)}
+    {!groups.length ? <div className="cp-brand-empty" role="status"><h3>No se encontraron marcas</h3><p>Las marcas aparecerán cuando los datos de la fuente permitan identificarlas.</p></div> : groups.map(group => <BrandRail key={group.brand.toLocaleLowerCase('es')} group={group} designations={designations} onOpen={onOpen}/>)}
   </section>;
 }

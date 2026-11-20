@@ -3,6 +3,7 @@ import os
 import signal
 import time
 from pathlib import Path
+from .processes import windows_workers, terminate_tree
 
 
 def cancel_workers(activity_ids, root):
@@ -12,6 +13,11 @@ def cancel_workers(activity_ids, root):
     # The caller holds the admission transaction. A process already claimed just
     # before the transaction may still be starting; scan through that launch gap.
     for _ in range(6):
+        if os.name == 'nt':
+            for process in windows_workers(wanted, root):
+                terminate_tree(process)
+            time.sleep(.1)
+            continue
         for entry in Path('/proc').iterdir():
             if not entry.name.isdigit():
                 continue

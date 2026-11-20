@@ -33,6 +33,8 @@ async def lifespan(application):
 
 
 app = FastAPI(title='Scrapper', docs_url='/api/docs', lifespan=lifespan)
+from .credentials import router as credentials_router
+app.include_router(credentials_router)
 from ..persistent.api import router as persistent_router
 app.include_router(persistent_router(audit=_audit_store))
 from ..comparison.api import router as comparison_router

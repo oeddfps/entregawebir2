@@ -15,7 +15,10 @@ Portal de extracción semántica con Next.js, FastAPI y Playwright. El único
 extractor disponible en la aplicación es `SemanticMetadataStrategy`: utiliza
 HTML, DOM, metadatos y vocabularios estándar. Los campos comerciales sin marcado
 estándar se interpretan con Jev dentro del mismo extractor; no se habilitan otros
-extractores. Configurar `TYPESAFE_API_KEY` en el entorno o `.env` para esa etapa.
+extractores. La clave se puede pegar y guardar en `/compare/`, dentro de
+**Configuración avanzada → Interpretación → Jev**, sin reiniciar los servicios.
+También se admite `TYPESAFE_API_KEY`
+en el entorno o `.env`; el entorno administrado tiene prioridad sobre la interfaz.
 Sin credenciales se conserva la extracción estructural y se registra la omisión.
 Cada llamada guarda tokens y gasto; la tarifa de entrada es US$0,042 por millón
 y los tokens de salida cuestan cero.
@@ -44,8 +47,11 @@ sudo systemctl enable --now scrapper-api.service scrapper-worker.service
 sudo systemctl restart scrapper-api.service
 ```
 
-Para desarrollo de Next.js, inicia una API en el puerto 8788 y utiliza
-`BACKEND_URL=http://127.0.0.1:8788 npm run dev --prefix src/web`. El servicio
+Para desarrollo de Next.js con una API ya iniciada en el puerto 8788, utiliza
+`BACKEND_URL=http://127.0.0.1:8788 npm run dev:next --prefix src/web`.
+`npm run dev --prefix src/web` inicia Next.js, una API local en 8787 y el worker;
+`BACKEND_URL` cambia únicamente el proxy, no el puerto de esa API local. Ver
+[arquitectura, contratos y configuración del frontend](docs/frontend.md). El servicio
 `scrapper-web-dev.service` queda deshabilitado en producción.
 
 ## Extraer una página

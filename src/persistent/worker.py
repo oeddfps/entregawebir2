@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from .store import Store, ROOT
 from .capture_policy import validate_destination
 from .browser_pool import BrowserPool, process_memory
+from .processes import snapshot, memory_mb as processes_memory_mb, terminate_tree, pause_tree
 from ..common.scrapper import AuditStore, SemanticMetadataStrategy
 from ..common.scrapper.runtime import PageExecutor
 from ..common.scrapper.models import RunSummary
@@ -171,16 +172,7 @@ def can_start_worker(settings, running, memory_mb):
 
 
 def process_snapshot():
-    if os.name == 'nt':
-        return {}
-    result = {}
-    for path in Path('/proc').glob('[0-9]*/stat'):
-        try:
-            fields = path.read_text().rsplit(')',1)[1].split()
-            result[int(path.parent.name)] = (int(fields[1]),int(fields[2]))
-        except (OSError,ValueError,IndexError):
-            continue
-    return result
+    return snapshot()
 
 
 def activity_memory(pid, snapshot):
@@ -191,29 +183,23 @@ def activity_memory(pid, snapshot):
         if children <= members:
             break
         members |= children
-    total = 0
-    for member in members:
-        try:
-            data = (Path('/proc')/str(member)/'smaps_rollup').read_text()
-            total += next(int(line.split()[1]) for line in data.splitlines() if line.startswith('Pss:'))/1024
-        except (OSError,ValueError,StopIteration):
-            continue
-    return total,members
+    return processes_memory_mb(members),members
 
 
 def interrupt_over_limit(store, process, activity_id, memory_mb, threshold, members):
     if memory_mb <= threshold or process.poll() is not None:
         return False
     reason = f'La actividad superó su umbral de memoria: {memory_mb:.0f} MB > {threshold} MB.'
-    for pid in members:
-        try:
-            if os.name == 'nt':
-                subprocess.run(['taskkill','/PID',str(pid),'/T','/F'],check=False,
-                               stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-            else:
+    if os.name == 'nt':
+        # The tree is resolved once using process identities. Do not revisit
+        # stale child PIDs after killing the root: Windows can reuse them.
+        terminate_tree(process.pid)
+    else:
+        for pid in members:
+            try:
                 os.kill(pid,signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+            except ProcessLookupError:
+                pass
     process.wait(timeout=10)
     recover_audit(store,activity_id,reason)
     store.finish(activity_id,reason,retryable=False)
@@ -286,7 +272,7 @@ def daemon(store):
                 if pause != suspended:
                     browsers.pause(activity_id,pause)
                     try:
-                        os.killpg(process.pid,signal.SIGSTOP if pause else signal.SIGCONT)
+                        pause_tree(process.pid,pause)
                     except ProcessLookupError:
                         continue
                     with store.db() as db:
@@ -341,10 +327,7 @@ def daemon(store):
     finally:
         for process,activity_id,_ in running.values():
             try:
-                if os.name == 'nt':
-                    process.kill()
-                else:
-                    os.killpg(process.pid,signal.SIGKILL)
+                terminate_tree(process.pid)
             except ProcessLookupError:
                 pass
             process.wait()

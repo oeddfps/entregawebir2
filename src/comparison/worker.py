@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from clean_process import Input, Output, process
 from clean_process.__main__ import write_json
 from clean_process.presentation import present
+from .diagnostics import stage_diagnostic
 
 
 def kill_tree(pid):
@@ -82,8 +83,8 @@ def processing(folder, interpreter, review_recognition='e5'):
                     finally:
                         write_json(folder / 'usage.json', {'calls': self.usage, 'inflight': False,
                                    'complete': all(c['usage_complete'] for c in self.usage)})
-            key = 'TYPESAFE_TEST_API_KEY' if os.getenv('TYPESAFE_TEST_MODE') == '1' else 'TYPESAFE_API_KEY'
-            backend = JevInterpreter(RecordedClient(os.getenv(key, '')))
+            from ..common.semantic_model import api_key
+            backend = JevInterpreter(RecordedClient(api_key()))
         from clean_process.review_recognition import E5Scorer, ReviewRecognizer
         recognizer = ReviewRecognizer(E5Scorer() if review_recognition == 'e5' else None) if review_recognition != 'off' else None
         output = process(request, interpreter=backend, review_recognizer=recognizer)
@@ -108,9 +109,10 @@ def main():
             capture(args.folder, request['sources'][index], request['limits'])
         else:
             processing(args.folder, request['interpreter'], request.get('review_recognition', 'e5'))
-    except Exception:
-        write_json(args.folder / 'stage-error.json', {'stage': args.stage,
-            'message': 'No se pudo completar la etapa. Revisa los diagnósticos y el contenido de entrada.'})
+    except Exception as error:
+        diagnostic = stage_diagnostic(args.folder, args.stage, 'error', error)
+        write_json(args.folder / 'stage-error.json', diagnostic)
+        print(diagnostic['message'], flush=True)
         raise SystemExit(1)
     finally:
         timer.cancel()
